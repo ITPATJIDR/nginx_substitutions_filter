@@ -23,7 +23,7 @@ echo "Expected: No transformation needed"
 
 curl -X POST http://localhost:8080/api \
   -H "Content-Type: application/json" \
-  -d '{"name":"JOHN"}' \
+  -d '{"email_address":"JOHN"}' \
   -w "\nHTTP Status: %{http_code}\n" \
   -s
 
