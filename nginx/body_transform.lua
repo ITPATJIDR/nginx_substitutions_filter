@@ -43,11 +43,6 @@ function transform_response_body()
                 json.message = string.gsub(json.message, "name", "username")
             end
             
-            -- Transform receivedField
-            if json.receivedField == "name" then
-                json.receivedField = "username"
-            end
-            
             -- Set new response
             ngx.arg[1] = cjson.encode(json)
             ngx.log(ngx.INFO, "Transformed response: name -> username")

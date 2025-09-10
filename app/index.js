@@ -11,11 +11,8 @@ app.use(bodyParser.json());
 // Sample POST endpoint
 app.post('/api', (req, res) => {
   console.log('Original request body:', req.body);
-  // Handle both username and name fields
-  const name = req.body.name || req.body.username || 'Unknown';
   res.json({
-    message: 'Hello, ' + name,
-    receivedField: 'name', // This will be transformed to 'username' by Nginx
+    message: 'Hello, ' + req.body.name,
     timestamp: new Date().toISOString()
   });
 });
