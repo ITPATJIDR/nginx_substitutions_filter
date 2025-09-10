@@ -18,7 +18,7 @@ echo -e "\n"
 
 # Test 2: POST request with name field (should still work)
 echo "2. Testing POST request with name field:"
-echo "Sending: {\"name\":\"JOHN\"}"
+echo "Sending: {\"email_address\":\"JOHN\"}"
 echo "Expected: No transformation needed"
 
 curl -X POST http://localhost:8080/api \

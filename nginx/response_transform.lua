@@ -4,8 +4,13 @@ local cjson = require "cjson"
 local body = ngx.arg[1]
 local eof = ngx.arg[2]
 
--- Only process if body exists and it's the last chunk
-if not body or not eof then
+-- Skip if no body content
+if not body then
+    return
+end
+
+-- Only process complete responses (when eof is true)
+if not eof then
     return
 end
 
