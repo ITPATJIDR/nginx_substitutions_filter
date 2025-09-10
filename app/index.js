@@ -7,15 +7,6 @@ const port = 3000;
 // Parse JSON body
 app.use(bodyParser.json());
 
-// Middleware to transform request body (username -> name)
-app.use((req, res, next) => {
-  if (req.body && req.body.username !== undefined) {
-    console.log('Transforming request: username -> name');
-    req.body.name = req.body.username;
-    delete req.body.username;
-  }
-  next();
-});
 
 // Sample POST endpoint
 app.post('/api', (req, res) => {
