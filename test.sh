@@ -1,28 +1,27 @@
 #!/bin/bash
 
-echo "=== Testing HTTP Substitutions Filter Module ==="
-echo
+echo "Testing Nginx with Lua request body modification..."
 
-echo "1. Testing POST endpoint (basic substitution):"
+# Test POST endpoint with username field
+echo "1. Testing POST with username field:"
 curl -X POST http://localhost:8080/api \
-    -H "Content-Type: application/json" \
-    -d '{"name":"World"}'
-echo -e "\nExpected: 'Hello' → 'Hi', 'Express' → 'Nginx-Express'\n"
+  -H "Content-Type: application/json" \
+  -d '{"username":"World"}' \
+  -w "\n\n"
 
-echo "2. Testing GET endpoint (multiple substitutions):"
-curl http://localhost:8080/api
-echo -e "\nExpected: 'Hello' → 'Hi', 'Express' → 'Nginx-Express'\n"
+# Test POST endpoint with name field (should work as-is)
+echo "2. Testing POST with name field:"
+curl -X POST http://localhost:8080/api \
+  -H "Content-Type: application/json" \
+  -d '{"name":"World"}' \
+  -w "\n\n"
 
-echo "3. Testing regex endpoint (numbers should be replaced if regex is enabled):"
-curl http://localhost:8080/test-regex
-echo -e "\nExpected: 'Hello' → 'Hi', 'Express' → 'Nginx-Express'\n"
+# Test GET endpoint
+echo "3. Testing GET endpoint:"
+curl http://localhost:8080/api \
+  -w "\n\n"
 
-echo "4. Testing case variations:"
-curl http://localhost:8080/test-case
-echo -e "\nExpected: 'Hello' → 'Hi', 'Express' → 'Nginx-Express'\n"
-
-echo "5. Testing health check:"
-curl http://localhost:8080/health
-echo -e "\nExpected: 'Hello' → 'Hi', 'Express' → 'Nginx-Express'\n"
-
-echo "=== Test completed ==="
+# Test health check
+echo "4. Testing health check:"
+curl http://localhost:8080/health \
+  -w "\n\n"
