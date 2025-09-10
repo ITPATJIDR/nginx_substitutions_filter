@@ -21,8 +21,9 @@ function transformRequestBody(r) {
         
         // Convert back to JSON and set as new body
         r.requestBody = JSON.stringify(json);
-        
+
         // Log the transformation
+        r.log('Request body after transformation:', json);
         r.log("Request body transformed: username -> name");
         
     } catch (e) {
@@ -57,6 +58,7 @@ function transformResponseBody(r) {
         r.responseBody = JSON.stringify(json);
         
         // Log the transformation
+        r.log('Request body after transformation:', json);
         r.log("Response body transformed: name -> username");
         
     } catch (e) {
