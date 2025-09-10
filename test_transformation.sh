@@ -28,20 +28,3 @@ curl -X POST http://localhost:8080/api \
   -s
 
 echo -e "\n"
-
-# Test 3: GET request
-echo "3. Testing GET request:"
-curl -X GET http://localhost:8080/api \
-  -w "\nHTTP Status: %{http_code}\n" \
-  -s
-
-echo -e "\n"
-
-# Test 4: Health check
-echo "4. Testing health check:"
-curl -X GET http://localhost:8080/health \
-  -w "\nHTTP Status: %{http_code}\n" \
-  -s
-
-echo -e "\n"
-echo "Test completed!"

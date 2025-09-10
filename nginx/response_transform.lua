@@ -81,7 +81,13 @@ transform_nested(data)
 
 -- Convert back to JSON
 local new_body = cjson.encode(data)
+
+-- Set the new body and clear the original
 ngx.arg[1] = new_body
+ngx.arg[2] = true  -- Mark as final chunk
+
+-- Clear the response buffer for next request
+ngx.ctx.response_buffer = ""
 
 -- Debug: log the transformed response
 ngx.log(ngx.INFO, "Transformed response: " .. new_body)
