@@ -14,12 +14,18 @@ if not eof then
     return
 end
 
+-- Log that we're processing the response
+ngx.log(ngx.INFO, "Processing response transformation, eof: " .. tostring(eof))
+
 -- Decode JSON
 local success, data = pcall(cjson.decode, body)
 if not success then
     ngx.log(ngx.ERR, "Error parsing JSON: " .. tostring(data))
     return
 end
+
+-- Debug: log the original response
+ngx.log(ngx.INFO, "Original response: " .. cjson.encode(data))
 
 -- Define mappings: ["old_key"] = "new_key"
 -- Here we're reversing the request mapping (name → username, etc.)
@@ -61,4 +67,6 @@ transform_nested(data)
 local new_body = cjson.encode(data)
 ngx.arg[1] = new_body
 
+-- Debug: log the transformed response
+ngx.log(ngx.INFO, "Transformed response: " .. new_body)
 ngx.log(ngx.INFO, "Response body transformed with key mappings")
