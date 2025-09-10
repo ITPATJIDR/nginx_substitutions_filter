@@ -28,3 +28,9 @@ curl -X POST http://localhost:8080/api \
   -s
 
 echo -e "\n"
+
+curl -X POST http://localhost:8080/api \
+  -H "Content-Type: application/json" \
+  -d '{"postal_code":"MOOOOOOOOO"}' \
+  -w "\nHTTP Status: %{http_code}\n" \
+  -s
