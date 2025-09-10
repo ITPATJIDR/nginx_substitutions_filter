@@ -1,10 +1,12 @@
-# Use OpenResty which includes nginx with Lua module
-FROM openresty/openresty:1.25.3.1-alpine
+# Use nginx with sub_filter support
+FROM nginx:1.25-alpine
 
-# Copy our custom configuration and Lua script
-COPY default.conf /usr/local/openresty/nginx/conf/conf.d/default.conf
-COPY body_transform.lua /usr/local/openresty/nginx/conf/body_transform.lua
+# Install additional modules if needed
+RUN apk add --no-cache curl
+
+# Copy our custom configuration
+COPY default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
-CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]

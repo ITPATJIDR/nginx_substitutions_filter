@@ -10,9 +10,11 @@ app.use(bodyParser.json());
 
 // Sample POST endpoint
 app.post('/api', (req, res) => {
-  console.log('Request body after transformation:', req.body);
+  console.log('Original request body:', req.body);
+  // Handle both username and name fields
+  const name = req.body.name || req.body.username || 'Unknown';
   res.json({
-    message: 'Hello, ' + req.body.name,
+    message: 'Hello, ' + name,
     receivedField: 'name', // This will be transformed to 'username' by Nginx
     timestamp: new Date().toISOString()
   });
