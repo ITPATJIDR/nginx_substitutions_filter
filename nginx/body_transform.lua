@@ -1,37 +1,26 @@
+-- Lua script for transforming request bodies (username -> name)
 local cjson = require "cjson"
 
--- Get body
+-- Transform request body (username -> name)
 local body = ngx.req.get_body_data()
 if not body then
     return
 end
 
--- Decode JSON
 local success, data = pcall(cjson.decode, body)
 if not success then
     ngx.log(ngx.ERR, "Error parsing JSON: " .. tostring(data))
     return
 end
 
--- Define mappings: ["old_key"] = "new_key"
-local key_map = {
-    username = "name",
-    email_address = "email",
-    phone_num = "phone",
-    user_id = "id"
-    -- add more mappings here
-}
-
--- Transform keys
-for old_key, new_key in pairs(key_map) do
-    if data[old_key] ~= nil then
-        data[new_key] = data[old_key]
-        data[old_key] = nil
-    end
+-- Transform username to name
+if data.username then
+    data.name = data.username
+    data.username = nil
 end
 
--- Encode JSON back
+-- Convert back to JSON and set as new body
 local new_body = cjson.encode(data)
 ngx.req.set_body_data(new_body)
 
-ngx.log(ngx.INFO, "Request body transformed with key mappings")
+ngx.log(ngx.INFO, "Request body transformed: username -> name")

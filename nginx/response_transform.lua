@@ -1,92 +1,33 @@
+-- Lua script for transforming response bodies (name -> username)
 local cjson = require "cjson"
 
--- Get response body
+-- Transform response body (name -> username)
 local body = ngx.arg[1]
 local eof = ngx.arg[2]
 
--- Skip if no body content
-if not body then
+if not body or eof then
     return
 end
 
--- Initialize response buffer if not exists
-if not ngx.ctx.response_buffer then
-    ngx.ctx.response_buffer = ""
-end
-
--- Accumulate response chunks
-ngx.ctx.response_buffer = ngx.ctx.response_buffer .. body
-
--- Only process when we have the complete response
-if not eof then
-    return
-end
-
--- Log that we're processing the response
-ngx.log(ngx.INFO, "Processing response transformation, eof: " .. tostring(eof))
-ngx.log(ngx.INFO, "Response body length: " .. string.len(ngx.ctx.response_buffer))
-
--- Check if body is empty or just whitespace
-if string.len(ngx.ctx.response_buffer) == 0 or string.match(ngx.ctx.response_buffer, "^%s*$") then
-    ngx.log(ngx.INFO, "Empty response body, skipping transformation")
-    return
-end
-
--- Decode JSON
-local success, data = pcall(cjson.decode, ngx.ctx.response_buffer)
+local success, data = pcall(cjson.decode, body)
 if not success then
     ngx.log(ngx.ERR, "Error parsing JSON: " .. tostring(data))
-    ngx.log(ngx.ERR, "Response body was: " .. ngx.ctx.response_buffer)
     return
 end
 
--- Debug: log the original response
-ngx.log(ngx.INFO, "Original response: " .. cjson.encode(data))
-
--- Define mappings: ["old_key"] = "new_key"
--- Here we're reversing the request mapping (name → username, etc.)
-local key_map = {
-    name = "username",
-    email = "email_address",
-    phone = "phone_num",
-    id = "user_id"
-    -- add more mappings here
-}
-
--- Transform top-level keys
-for old_key, new_key in pairs(key_map) do
-    if data[old_key] ~= nil then
-        data[new_key] = data[old_key]
-        data[old_key] = nil
-    end
+-- Transform name to username
+if data.name then
+    data.username = data.name
+    data.name = nil
 end
 
--- (Optional) Deep transform inside nested tables
-local function transform_nested(tbl)
-    if type(tbl) ~= "table" then return end
-    for k, v in pairs(tbl) do
-        -- If key matches, rename it
-        if key_map[k] then
-            tbl[key_map[k]] = v
-            tbl[k] = nil
-        end
-        -- Recurse into nested tables
-        if type(v) == "table" then
-            transform_nested(v)
-        end
-    end
+-- Also transform any nested objects
+if data.message and type(data.message) == "string" then
+    data.message = string.gsub(data.message, "name", "username")
 end
-
-transform_nested(data)
 
 -- Convert back to JSON
 local new_body = cjson.encode(data)
-
--- Clear the response buffer and replace with transformed data
-ngx.ctx.response_buffer = ""
 ngx.arg[1] = new_body
-ngx.arg[2] = true  -- Mark as final chunk
 
--- Debug: log the transformed response
-ngx.log(ngx.INFO, "Transformed response: " .. new_body)
-ngx.log(ngx.INFO, "Response body transformed with key mappings")
+ngx.log(ngx.INFO, "Response body transformed: name -> username")
