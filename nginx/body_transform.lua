@@ -13,14 +13,29 @@ if not success then
     return
 end
 
--- Transform username to name
-if data.username then
-    data.name = data.username
-    data.username = nil
+-- Define key mappings: ["old_key"] = "new_key"
+local key_map = {
+    username = "name",
+    email_address = "email",
+    phone_number = "phone",
+    user_id = "id",
+    first_name = "firstName",
+    last_name = "lastName",
+    date_of_birth = "dob",
+    postal_code = "zipCode"
+    -- Add more mappings here as needed
+}
+
+-- Transform all keys
+for old_key, new_key in pairs(key_map) do
+    if data[old_key] ~= nil then
+        data[new_key] = data[old_key]
+        data[old_key] = nil
+    end
 end
 
 -- Convert back to JSON and set as new body
 local new_body = cjson.encode(data)
 ngx.req.set_body_data(new_body)
 
-ngx.log(ngx.INFO, "Request body transformed: username -> name")
+ngx.log(ngx.INFO, "Request body transformed with key mappings")
