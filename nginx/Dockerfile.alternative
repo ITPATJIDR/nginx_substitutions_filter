@@ -1,4 +1,4 @@
-# Use nginx with njs module from nginxinc
+# Alternative: Use nginx with njs module from nginxinc
 FROM nginxinc/nginx-unprivileged:1.25-alpine
 
 # Install njs module

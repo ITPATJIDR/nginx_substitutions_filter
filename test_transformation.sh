@@ -1,11 +1,11 @@
 #!/bin/bash
 
-echo "=== Testing Nginx JavaScript Body Transformation ==="
+echo "=== Testing Express Middleware Body Transformation ==="
 echo ""
 
 echo "1. Testing POST request with username -> name transformation"
 echo "Sending: {\"username\":\"World\"}"
-echo "Expected: Nginx transforms username->name, Express receives 'name', response transforms name->username"
+echo "Expected: Express middleware transforms username->name, processes request, then transforms name->username in response"
 echo ""
 
 curl -X POST http://localhost:8080/api \
