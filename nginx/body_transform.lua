@@ -3,49 +3,67 @@ local cjson = require "cjson"
 
 -- Transform request body (username -> name)
 function transform_request_body()
-    local ngx = ngx
-    local req = ngx.req
-    
-    -- Read request body
-    ngx.req.read_body()
     local body = ngx.req.get_body_data()
     
-    if body then
-        local success, json = pcall(cjson.decode, body)
-        if success and json and json.username then
-            -- Transform username to name
-            json.name = json.username
-            json.username = nil
-            
-            -- Set new body
-            ngx.req.set_body_data(cjson.encode(json))
-            ngx.log(ngx.INFO, "Transformed request: username -> name")
-        end
+    if not body then
+        return
     end
+    
+    local success, data = pcall(cjson.decode, body)
+    if not success then
+        ngx.log(ngx.ERR, "Error parsing JSON: " .. tostring(data))
+        return
+    end
+    
+    -- Transform username to name
+    if data.username then
+        data.name = data.username
+        data.username = nil
+    end
+    
+    -- Convert back to JSON and set as new body
+    local new_body = cjson.encode(data)
+    ngx.req.set_body_data(new_body)
+    
+    ngx.log(ngx.INFO, "Request body transformed: username -> name")
 end
 
 -- Transform response body (name -> username)
 function transform_response_body()
-    local ngx = ngx
-    local res = ngx.arg[1]
+    local body = ngx.arg[1]
+    local eof = ngx.arg[2]
     
-    if res then
-        local success, json = pcall(cjson.decode, res)
-        if success and json then
-            -- Transform name back to username
-            if json.name then
-                json.username = json.name
-                json.name = nil
-            end
-            
-            -- Transform any text containing 'name' to 'username'
-            if json.message and type(json.message) == "string" then
-                json.message = string.gsub(json.message, "name", "username")
-            end
-            
-            -- Set new response
-            ngx.arg[1] = cjson.encode(json)
-            ngx.log(ngx.INFO, "Transformed response: name -> username")
-        end
+    if not body or eof then
+        return
     end
+    
+    local success, data = pcall(cjson.decode, body)
+    if not success then
+        ngx.log(ngx.ERR, "Error parsing JSON: " .. tostring(data))
+        return
+    end
+    
+    -- Transform name to username
+    if data.name then
+        data.username = data.name
+        data.name = nil
+    end
+    
+    -- Also transform any nested objects
+    if data.message and type(data.message) == "string" then
+        data.message = string.gsub(data.message, "name", "username")
+    end
+    
+    -- Convert back to JSON
+    local new_body = cjson.encode(data)
+    ngx.arg[1] = new_body
+    
+    ngx.log(ngx.INFO, "Response body transformed: name -> username")
+end
+
+-- Main execution
+if ngx.var.request_method == "POST" or ngx.var.request_method == "PUT" or ngx.var.request_method == "PATCH" then
+    transform_request_body()
+else
+    transform_response_body()
 end

@@ -7,12 +7,14 @@ const port = 3000;
 // Parse JSON body
 app.use(bodyParser.json());
 
-
 // Sample POST endpoint
 app.post('/api', (req, res) => {
-  console.log('Original request body:', req.body);
+  console.log('Received request body:', req.body);
+  // Handle the transformed name field (username -> name)
+  const name = req.body.name || 'Unknown';
   res.json({
-    message: 'Hello, ' + req.body.name,
+    message: 'Hello, ' + name,
+    name: name,
     timestamp: new Date().toISOString()
   });
 });

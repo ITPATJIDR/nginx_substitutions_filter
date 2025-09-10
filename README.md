@@ -1,6 +1,6 @@
-# Express.js + Nginx with JavaScript Body Transformation
+# Express.js + Nginx with Lua Body Transformation
 
-This project demonstrates how to use Nginx's JavaScript module (`ngx_http_js_module`) to transform both request and response bodies, with Express.js as the backend application. The setup transforms `username` to `name` in requests and back to `username` in responses.
+This project demonstrates how to use Nginx with Lua scripting to transform both request and response bodies, with Express.js as the backend application. The setup transforms `username` to `name` in requests and back to `username` in responses.
 
 ## Project Structure
 
@@ -10,9 +10,9 @@ nginx-express-docker/
 │   ├── index.js          # Express.js application
 │   └── package.json      # Node.js dependencies
 ├── nginx/
-│   ├── Dockerfile        # Custom Nginx with JavaScript module
-│   ├── default.conf      # Nginx configuration with js_body_filter
-│   └── body_transform.js # JavaScript transformation logic
+│   ├── Dockerfile        # Custom Nginx with Lua support (OpenResty)
+│   ├── default.conf      # Nginx configuration with Lua scripting
+│   └── body_transform.lua # Lua transformation logic
 ├── docker-compose.yml    # Docker Compose orchestration
 ├── Dockerfile           # Express app container
 ├── test_transformation.sh # Test script
@@ -22,7 +22,7 @@ nginx-express-docker/
 ## Features
 
 - **Express.js Backend**: Simple REST API with JSON endpoints
-- **Custom Nginx**: Built with JavaScript module (`ngx_http_js_module`) support
+- **Custom Nginx**: Built with Lua support using OpenResty
 - **Request Body Transformation**: Transforms `username` to `name` before sending to Express
 - **Response Body Transformation**: Transforms `name` back to `username` in responses
 - **Docker Compose**: Easy orchestration of services
@@ -70,16 +70,16 @@ nginx-express-docker/
 
 ## Configuration Details
 
-### Nginx JavaScript Module Configuration
+### Nginx Lua Configuration
 
-The Nginx configuration uses the JavaScript module:
-- `js_import body_transform from /etc/nginx/body_transform.js` - Loads the transformation module
-- `js_body_filter body_transform.transformRequestBody` - Transforms request bodies
-- `js_body_filter body_transform.transformResponseBody` - Transforms response bodies
+The Nginx configuration uses Lua scripting:
+- `access_by_lua_file /etc/nginx/lua/body_transform.lua` - Transforms request bodies
+- `body_filter_by_lua_file /etc/nginx/lua/body_transform.lua` - Transforms response bodies
+- `lua_need_request_body on` - Enables reading request body in Lua
 
-### JavaScript Transformation Logic
+### Lua Transformation Logic
 
-The `body_transform.js` module handles:
+The `body_transform.lua` script handles:
 - **Request transformation**: Converts `username` field to `name` field
 - **Response transformation**: Converts `name` field back to `username` field
 - **Text replacement**: Replaces "name" with "username" in message text
@@ -98,8 +98,8 @@ docker-compose down
 
 ## Notes
 
-- The JavaScript module (`ngx_http_js_module`) enables both request and response body transformation
+- The Lua scripting enables both request and response body transformation
 - This approach is more powerful than basic `sub_filter` as it allows complex JSON manipulation
 - The setup includes gzip compression for better performance
-- Custom Nginx build is required to include the JavaScript module
+- OpenResty (Nginx + Lua) is used for Lua scripting support
 - Error handling ensures the service continues working even with malformed JSON
