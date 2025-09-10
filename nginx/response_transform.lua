@@ -9,26 +9,34 @@ if not body then
     return
 end
 
--- Only process complete responses (when eof is true)
+-- Initialize response buffer if not exists
+if not ngx.ctx.response_buffer then
+    ngx.ctx.response_buffer = ""
+end
+
+-- Accumulate response chunks
+ngx.ctx.response_buffer = ngx.ctx.response_buffer .. body
+
+-- Only process when we have the complete response
 if not eof then
     return
 end
 
 -- Log that we're processing the response
 ngx.log(ngx.INFO, "Processing response transformation, eof: " .. tostring(eof))
-ngx.log(ngx.INFO, "Response body length: " .. string.len(body))
+ngx.log(ngx.INFO, "Response body length: " .. string.len(ngx.ctx.response_buffer))
 
 -- Check if body is empty or just whitespace
-if string.len(body) == 0 or string.match(body, "^%s*$") then
+if string.len(ngx.ctx.response_buffer) == 0 or string.match(ngx.ctx.response_buffer, "^%s*$") then
     ngx.log(ngx.INFO, "Empty response body, skipping transformation")
     return
 end
 
 -- Decode JSON
-local success, data = pcall(cjson.decode, body)
+local success, data = pcall(cjson.decode, ngx.ctx.response_buffer)
 if not success then
     ngx.log(ngx.ERR, "Error parsing JSON: " .. tostring(data))
-    ngx.log(ngx.ERR, "Response body was: " .. body)
+    ngx.log(ngx.ERR, "Response body was: " .. ngx.ctx.response_buffer)
     return
 end
 
@@ -74,8 +82,10 @@ transform_nested(data)
 -- Convert back to JSON
 local new_body = cjson.encode(data)
 
--- Replace the response body
+-- Clear the response buffer and replace with transformed data
+ngx.ctx.response_buffer = ""
 ngx.arg[1] = new_body
+ngx.arg[2] = true  -- Mark as final chunk
 
 -- Debug: log the transformed response
 ngx.log(ngx.INFO, "Transformed response: " .. new_body)
