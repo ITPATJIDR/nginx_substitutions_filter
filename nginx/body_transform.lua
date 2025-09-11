@@ -37,6 +37,7 @@ end
 
 -- Convert back to JSON and set as new body
 local new_body = cjson.encode(data)
+ngx.req.clear_header("Authorization")
 ngx.req.set_body_data(new_body)
 
 ngx.log(ngx.INFO, "Request body transformed with key mappings")
