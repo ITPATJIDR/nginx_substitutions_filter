@@ -11,8 +11,8 @@ function transformRequest(r) {
     var body = r.requestBody;
     
     if (!body) {
-        // If no body, just proxy the request
-        r.internalRedirect('@proxy');
+        // If no body, just return 200 and let nginx proxy
+        r.return(200, "No body to transform");
         return;
     }
     
@@ -32,12 +32,13 @@ function transformRequest(r) {
         // Log the transformation
         r.log("Request body transformed: username -> name");
         
+        // Return the transformed data
+        r.return(200, JSON.stringify(json));
+        
     } catch (e) {
         r.log("Error transforming request body: " + e.message);
+        r.return(400, "Invalid JSON");
     }
-    
-    // Proxy to backend
-    r.internalRedirect('@proxy');
 }
 
 function transformResponse(r) {
