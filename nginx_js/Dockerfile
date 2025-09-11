@@ -1,4 +1,4 @@
-# Use Ubuntu base for nginx-plus with njs module
+# Use Ubuntu base for nginx with njs module
 FROM ubuntu:20.04
 
 # Install required packages
@@ -14,9 +14,9 @@ RUN wget http://nginx.org/keys/nginx_signing.key -O nginx_signing.key && \
 # Add nginx repository
 RUN echo "deb http://nginx.org/packages/mainline/ubuntu/ focal nginx" >> /etc/apt/sources.list
 
-# Update and install nginx-plus with njs module
+# Update and install nginx with njs module
 RUN apt-get update && \
-    apt-get install -y nginx-plus nginx-plus-module-njs && \
+    apt-get install -y nginx nginx-module-njs && \
     rm -rf /var/lib/apt/lists/*
 
 # Create njs directory
