@@ -5,6 +5,7 @@ FROM nginx:1.25-alpine
 RUN apk add --no-cache nginx-mod-http-js
 
 # Copy our custom configuration and JavaScript files
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY body_transform.js /etc/nginx/body_transform.js
 
