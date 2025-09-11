@@ -50,4 +50,16 @@ curl -X POST http://localhost:8080/api \
 -w "\nHTTP Status: %{http_code}\n" \
 -s
 
+echo -e "\n" 
+
+echo "4. Testing POST request with name field:"
+echo "Sending: {\"name\":\"PAT\"}"
+
+curl -X POST http://localhost:8080/api \
+  -H "Content-Type: application/json" \
+  -d '{"name":"PAT"}' \
+  -w "\nHTTP Status: %{http_code}\n" \
+  -s
+
+echo -e "\n" 
 
