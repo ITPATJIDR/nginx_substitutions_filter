@@ -1,5 +1,7 @@
-// JavaScript module for njs (nginx JavaScript)
-function transformRequestBody(r) {
+// njs module for transforming request and response bodies
+// Based on nginx njs-examples structure
+
+function transformRequest(r) {
     // Remove authorization headers from request
     r.headersOut['Authorization'] = undefined;
     r.headersOut['X-API-Key'] = undefined;
@@ -9,6 +11,8 @@ function transformRequestBody(r) {
     var body = r.requestBody;
     
     if (!body) {
+        // If no body, just proxy the request
+        r.internalRedirect('@proxy');
         return;
     }
     
@@ -31,9 +35,12 @@ function transformRequestBody(r) {
     } catch (e) {
         r.log("Error transforming request body: " + e.message);
     }
+    
+    // Proxy to backend
+    r.internalRedirect('@proxy');
 }
 
-function transformResponseBody(r) {
+function transformResponse(r) {
     // Read the response body
     var body = r.responseBody;
     
@@ -68,4 +75,4 @@ function transformResponseBody(r) {
 }
 
 // Export functions for use in nginx config
-export default { transformRequestBody, transformResponseBody };
+export default { transformRequest, transformResponse };
