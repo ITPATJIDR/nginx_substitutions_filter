@@ -1,8 +1,23 @@
-# Use nginx with njs module
-FROM nginx:1.25-alpine
+# Use Ubuntu base for nginx with njs module
+FROM ubuntu:20.04
 
-# Install njs module
-RUN apk add --no-cache nginx-mod-http-js
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y wget gnupg ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add nginx signing key
+RUN wget http://nginx.org/keys/nginx_signing.key -O nginx_signing.key && \
+    apt-key add nginx_signing.key && \
+    rm nginx_signing.key
+
+# Add nginx repository
+RUN echo "deb http://nginx.org/packages/mainline/ubuntu/ focal nginx" >> /etc/apt/sources.list
+
+# Update and install nginx with njs module
+RUN apt-get update && \
+    apt-get install -y nginx nginx-module-njs && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create njs directory
 RUN mkdir -p /etc/nginx/njs
