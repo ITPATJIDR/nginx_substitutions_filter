@@ -19,7 +19,6 @@ echo -e "\n"
 # Test 2: POST request with name field (should still work)
 echo "2. Testing POST request with name field:"
 echo "Sending: {\"email_address\":\"JOHN\"}"
-echo "Expected: No transformation needed"
 
 curl -X POST http://localhost:8080/api \
   -H "Content-Type: application/json" \
@@ -29,8 +28,26 @@ curl -X POST http://localhost:8080/api \
 
 echo -e "\n"
 
+echo "3. Testing POST request with name field:"
+echo "Sending: {\"postal_code\":\"MOOOOOOOOO\"}"
+
 curl -X POST http://localhost:8080/api \
   -H "Content-Type: application/json" \
   -d '{"postal_code":"MOOOOOOOOO"}' \
   -w "\nHTTP Status: %{http_code}\n" \
   -s
+
+echo -e "\n"
+
+
+echo "3. Testing POST request with name field and authorization header:"
+echo "Sending: {\"username\":\"World\"} and Authorization: Bearer 1238971231723"
+
+curl -X POST http://localhost:8080/api \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer 1238971231723" \
+-d '{"username":"World"}' \
+-w "\nHTTP Status: %{http_code}\n" \
+-s
+
+

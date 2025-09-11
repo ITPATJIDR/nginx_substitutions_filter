@@ -3,6 +3,7 @@ local cjson = require "cjson"
 
 -- Transform request body (username -> name)
 local body = ngx.req.get_body_data()
+local headers = ngx.req.get_headers()
 if not body then
     return
 end

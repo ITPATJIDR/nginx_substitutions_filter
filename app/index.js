@@ -10,6 +10,7 @@ app.use(bodyParser.json());
 // Sample POST endpoint
 app.post('/api', (req, res) => {
   console.log('Received request body:', req.body);
+  console.log('Received request headers:', req.headers);
   res.json({
     ...req.body,
     timestamp: new Date().toISOString()
