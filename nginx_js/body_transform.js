@@ -1,6 +1,4 @@
-// JavaScript module for transforming request and response bodies
-// This module handles username <-> name transformation and header removal
-
+// JavaScript module for njs (nginx JavaScript)
 function transformRequestBody(r) {
     // Remove authorization headers from request
     r.headersOut['Authorization'] = undefined;
@@ -29,7 +27,6 @@ function transformRequestBody(r) {
         
         // Log the transformation
         r.log("Request body transformed: username -> name");
-        r.log("Auth headers removed from request");
         
     } catch (e) {
         r.log("Error transforming request body: " + e.message);
