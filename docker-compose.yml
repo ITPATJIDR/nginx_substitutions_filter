@@ -9,7 +9,7 @@ services:
       - app-network
 
   nginx:
-    build: ./nginx
+    build: ./nginx_js
     container_name: nginx_server
     ports:
       - "8080:80"

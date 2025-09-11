@@ -1,7 +1,12 @@
 // JavaScript module for transforming request and response bodies
-// This module handles username <-> name transformation
+// This module handles username <-> name transformation and header removal
 
 function transformRequestBody(r) {
+    // Remove authorization headers from request
+    r.headersOut['Authorization'] = undefined;
+    r.headersOut['X-API-Key'] = undefined;
+    r.headersOut['X-Auth-Token'] = undefined;
+    
     // Read the request body
     var body = r.requestBody;
     
@@ -21,10 +26,10 @@ function transformRequestBody(r) {
         
         // Convert back to JSON and set as new body
         r.requestBody = JSON.stringify(json);
-
+        
         // Log the transformation
-        r.log('Request body after transformation:', json);
         r.log("Request body transformed: username -> name");
+        r.log("Auth headers removed from request");
         
     } catch (e) {
         r.log("Error transforming request body: " + e.message);
@@ -58,7 +63,6 @@ function transformResponseBody(r) {
         r.responseBody = JSON.stringify(json);
         
         // Log the transformation
-        r.log('Request body after transformation:', json);
         r.log("Response body transformed: name -> username");
         
     } catch (e) {
