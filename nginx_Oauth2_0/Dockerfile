@@ -7,17 +7,11 @@ RUN apk add --no-cache \
     git \
     build-base \
     openssl-dev \
-    lua5.1 \
-    lua5.1-dev \
-    lua5.1-luarocks \
     unzip
 
-# Ensure luarocks is in PATH
-ENV PATH="/usr/bin:$PATH"
-
-# Install required Lua modules
-RUN luarocks install lua-resty-http
-RUN luarocks install lua-resty-openidc
+# Install required Lua modules using the built-in luarocks
+RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-http
+RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-openidc
 
 # Create directories
 RUN mkdir -p /etc/nginx/conf.d
