@@ -1,23 +1,29 @@
 FROM openresty/openresty:alpine
 
-# Install required packages including luarocks
-RUN apk add --no-cache curl luarocks
+# Install dependencies
+RUN apk add --no-cache \
+    bash \
+    curl \
+    git \
+    build-base \
+    openssl-dev \
+    lua5.1 \
+    lua5.1-dev \
+    luarocks
 
-# Install Lua dependencies using full path
-RUN /usr/bin/luarocks install lua-resty-http
-RUN /usr/bin/luarocks install lua-resty-jwt
-RUN /usr/bin/luarocks install lua-cjson
+# Install lua-resty-openidc and lua-resty-http
+RUN luarocks install lua-resty-http
+RUN luarocks install lua-resty-openidc
 
 # Create directories
-RUN mkdir -p /etc/nginx/lua
 RUN mkdir -p /etc/nginx/conf.d
 
 # Copy nginx configuration
 COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
 COPY conf.d/ /etc/nginx/conf.d/
 
-# Copy Lua scripts
-COPY lua/ /etc/nginx/lua/
+# Copy Lua scripts to the proper OpenResty location
+COPY lua/ /usr/local/openresty/lualib/
 
 # Create logs directory
 RUN mkdir -p /var/log/nginx
@@ -26,4 +32,4 @@ RUN mkdir -p /var/log/nginx
 EXPOSE 80 443
 
 # Start nginx
-CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+CMD ["openresty", "-g", "daemon off;"]
