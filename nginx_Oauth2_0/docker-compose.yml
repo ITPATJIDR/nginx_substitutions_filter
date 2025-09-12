@@ -17,7 +17,7 @@ services:
       - app-network
 
   app:
-    build: ../app
+    build: ./app
     container_name: express_app
     restart: unless-stopped
     networks:
