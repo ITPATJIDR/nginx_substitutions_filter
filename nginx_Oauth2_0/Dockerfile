@@ -7,9 +7,24 @@ RUN apk add --no-cache \
     git \
     build-base \
     openssl-dev \
-    unzip
+    unzip \
+    wget \
+    tar
 
-# Install required Lua modules using the built-in luarocks
+# Install luarocks from source
+RUN wget http://luarocks.org/releases/luarocks-2.0.13.tar.gz && \
+    tar -xzvf luarocks-2.0.13.tar.gz && \
+    cd luarocks-2.0.13/ && \
+    ./configure --prefix=/usr/local/openresty/luajit \
+        --with-lua=/usr/local/openresty/luajit/ \
+        --lua-suffix=jit \
+        --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf luarocks-2.0.13*
+
+# Install required Lua modules
 RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-http
 RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-openidc
 
