@@ -7,7 +7,7 @@ services:
     command: start-dev
     environment:
       KC_DB: dev-file
-      KC_HEALTH_ENABLED: true
+      KC_HEALTH_ENABLED: 1
       KEYCLOAK_ADMIN: ${KEYCLOAK_USER}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD}
       KC_HOSTNAME_STRICT: "false"
