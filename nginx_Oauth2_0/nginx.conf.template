@@ -1,0 +1,245 @@
+upstream express_app {
+    server app:3000;
+}
+
+server {
+    listen   80;
+    root     /opt/nginx/html;
+    resolver 127.0.0.11 valid=1s ipv6=off;
+
+    error_log  /var/log/nginx/error.log info;
+    access_log /var/log/nginx/access.log;
+
+    error_log /dev/stderr info;
+    access_log /dev/stdout;
+    
+    # Health check endpoint (public)
+    location /health {
+        proxy_pass http://express_app/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Root endpoint for login status
+    location = / {
+        access_by_lua_block {
+            local opts = {
+                redirect_uri = "/redirect_uri",
+                accept_none_alg = false,
+                renew_access_token_on_expiry = true,
+                discovery = {
+                    issuer = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}",
+                    authorization_endpoint = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth",
+                    id_token_signing_alg_values_supported = { "RS256", "RS384", "RS512" },
+                    token_signing_alg_values_expected = { "RS256", "RS384", "RS512" },
+                    token_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token",
+                    jwks_uri = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs",
+                    userinfo_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo",
+                    revocation_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/revoke",
+                    end_session_endpoint = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout",
+                    introspection_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token/introspect",
+                },
+                token_endpoint_auth_method = "client_secret_basic",
+                client_id = "${KEYCLOAK_CLIENT}",
+                client_secret = "${KEYCLOAK_SECRET}",
+                logout_path = "/logout",
+                redirect_after_logout_uri = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?redirect_uri=${KEYCLOAK_LOGOUT_REDIRECT_URI}",
+                redirect_after_logout_with_id_token_hint = false,
+                scope = "openid profile email",
+                session_contents = {id_token=true}
+            }
+            
+            local res, err = require("resty.openidc").authenticate(opts)
+            if err then
+                ngx.status = 403
+                ngx.log(ngx.ERR, "Authentication failed: ", err)
+                ngx.exit(ngx.HTTP_FORBIDDEN)
+            end
+
+            -- Show user info page
+            ngx.header["Content-Type"] = "text/html"
+            ngx.say([[
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 50px; }
+        .user-info { background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .btn { 
+            background-color: #dc3545; 
+            color: white; 
+            padding: 10px 20px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            display: inline-block; 
+            margin: 10px;
+        }
+        .btn:hover { background-color: #c82333; }
+        .api-link {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px;
+        }
+        .api-link:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <h1>Welcome!</h1>
+    <p>You are successfully authenticated with Keycloak.</p>
+    <div>
+        <a href="/api/users" class="api-link">View Users API</a>
+        <a href="/api/posts" class="api-link">View Posts API</a>
+        <a href="/logout" class="btn">Logout</a>
+    </div>
+</body>
+</html>
+            ]])
+        }
+    }
+    
+    # Protected API endpoints
+    location /api/ {
+        access_by_lua_block {
+            local opts = {
+                redirect_uri = "/redirect_uri",
+                accept_none_alg = false,
+                renew_access_token_on_expiry = true,
+                discovery = {
+                    issuer = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}",
+                    authorization_endpoint = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/auth",
+                    id_token_signing_alg_values_supported = { "RS256", "RS384", "RS512" },
+                    token_signing_alg_values_expected = { "RS256", "RS384", "RS512" },
+                    token_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token",
+                    jwks_uri = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs",
+                    userinfo_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo",
+                    revocation_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/revoke",
+                    end_session_endpoint = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout",
+                    introspection_endpoint = "${KEYCLOAK_INTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token/introspect",
+                },
+                token_endpoint_auth_method = "client_secret_basic",
+                client_id = "${KEYCLOAK_CLIENT}",
+                client_secret = "${KEYCLOAK_SECRET}",
+                logout_path = "/logout",
+                redirect_after_logout_uri = "${KEYCLOAK_EXTERNAL_ENDPOINT}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?redirect_uri=${KEYCLOAK_LOGOUT_REDIRECT_URI}",
+                redirect_after_logout_with_id_token_hint = false,
+                scope = "openid profile email",
+                session_contents = {id_token=true}
+            }
+            
+            local res, err = require("resty.openidc").authenticate(opts)
+            if err then
+                ngx.status = 403
+                ngx.log(ngx.ERR, "Authentication failed: ", err)
+                ngx.exit(ngx.HTTP_FORBIDDEN)
+            end
+
+            -- Add user info to request headers
+            if res.user then
+                ngx.req.set_header("X-User-ID", res.user.sub or "")
+                ngx.req.set_header("X-User-Email", res.user.email or "")
+                ngx.req.set_header("X-User-Name", res.user.preferred_username or res.user.name or "")
+                ngx.req.set_header("X-User-Roles", table.concat(res.user.realm_access and res.user.realm_access.roles or {}, ","))
+            end
+        }
+
+        # Read request body for transformation
+        lua_need_request_body on;
+        
+        # Body transformation
+        access_by_lua_block {
+            local cjson = require "cjson"
+            
+            -- Transform request body if JSON
+            if ngx.var.content_type and ngx.var.content_type:find("application/json") then
+                local body = ngx.req.get_body_data()
+                
+                if body then
+                    local ok, data = pcall(cjson.decode, body)
+                    if ok and data then
+                        -- Transform username to name if present
+                        if data.username and not data.name then
+                            data.name = data.username
+                            data.username = nil
+                        end
+                        
+                        -- Add user context from headers
+                        local user_id = ngx.req.get_headers()["X-User-ID"]
+                        local user_email = ngx.req.get_headers()["X-User-Email"]
+                        
+                        if user_id and user_id ~= "" then
+                            data.user_id = user_id
+                        end
+                        if user_email and user_email ~= "" then
+                            data.user_email = user_email
+                        end
+                        
+                        -- Re-encode the body
+                        local new_body = cjson.encode(data)
+                        ngx.req.set_body_data(new_body)
+                    end
+                end
+            end
+        }
+        
+        # Proxy to Express app
+        proxy_pass http://express_app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Content-Type $content_type;
+        
+        # Transform response body
+        header_filter_by_lua_block {
+            ngx.header.content_length = nil
+        }
+        
+        body_filter_by_lua_block {
+            local cjson = require "cjson"
+            
+            -- Only process JSON responses
+            if ngx.header.content_type and ngx.header.content_type:find("application/json") then
+                local chunk, eof = ngx.arg[1], ngx.arg[2]
+                
+                if not eof then
+                    ngx.arg[1] = chunk
+                    return
+                end
+                
+                if chunk then
+                    local ok, data = pcall(cjson.decode, chunk)
+                    if ok and data then
+                        -- Transform name back to username if present
+                        if data.name and not data.username then
+                            data.username = data.name
+                            data.name = nil
+                        end
+                        
+                        -- Add authentication status
+                        data.authenticated = true
+                        
+                        -- Re-encode the response
+                        local new_chunk = cjson.encode(data)
+                        ngx.arg[1] = new_chunk
+                    else
+                        ngx.arg[1] = chunk
+                    end
+                end
+            end
+        }
+    }
+
+    # Disabling cache so the browser won't cache the website
+    expires           0;
+    add_header        Cache-Control private;
+
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+}
