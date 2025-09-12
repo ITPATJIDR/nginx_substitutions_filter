@@ -3,10 +3,10 @@ FROM openresty/openresty:alpine
 # Install required packages including luarocks
 RUN apk add --no-cache curl luarocks
 
-# Install Lua dependencies
-RUN luarocks install lua-resty-http
-RUN luarocks install lua-resty-jwt
-RUN luarocks install lua-cjson
+# Install Lua dependencies using full path
+RUN /usr/bin/luarocks install lua-resty-http
+RUN /usr/bin/luarocks install lua-resty-jwt
+RUN /usr/bin/luarocks install lua-cjson
 
 # Create directories
 RUN mkdir -p /etc/nginx/lua
