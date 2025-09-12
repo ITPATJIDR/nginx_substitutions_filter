@@ -2,23 +2,17 @@ version: '3.8'
 
 services:
   keycloak:
-    image: keycloak/keycloak:25.0.6
+    image: keycloak/keycloak:23.0
     container_name: keycloak
     command: start-dev
     environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
       KC_DB: dev-file
-      KC_HEALTH_ENABLED: 1
-      KEYCLOAK_ADMIN: ${KEYCLOAK_USER}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD}
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
     ports:
       - "8080:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000;echo -e \"GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n\" >&3;grep \"HTTP/1.1 200 OK\" <&3"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - app-network
 
@@ -40,15 +34,15 @@ services:
       - ./logs:/var/log/nginx
       - ./nginx.conf.template:/etc/nginx/conf.d/nginx.conf.template
     environment:
-      KEYCLOAK_INTERNAL_ENDPOINT: ${KEYCLOAK_INTERNAL_ENDPOINT}
-      KEYCLOAK_EXTERNAL_ENDPOINT: ${KEYCLOAK_EXTERNAL_ENDPOINT}
-      KEYCLOAK_LOGOUT_REDIRECT_URI: ${KEYCLOAK_LOGOUT_REDIRECT_URI}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      KEYCLOAK_CLIENT: ${KEYCLOAK_CLIENT}
-      KEYCLOAK_SECRET: ${KEYCLOAK_SECRET}
+      KEYCLOAK_INTERNAL_ENDPOINT: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_ENDPOINT: http://192.168.101.13:8080
+      KEYCLOAK_LOGOUT_REDIRECT_URI: http://192.168.101.13/
+      KEYCLOAK_REALM: master
+      KEYCLOAK_CLIENT: nginx-client
+      KEYCLOAK_SECRET: 1Giz1gJyaZEAiSAsH3slrEXz1ayp7aEO
     depends_on:
-      keycloak:
-        condition: service_healthy
+      - keycloak
+      - app
     restart: unless-stopped
     networks:
       - app-network
