@@ -1,6 +1,6 @@
 FROM openresty/openresty:alpine
 
-# Install dependencies
+# Install dependencies for building Lua modules
 RUN apk add --no-cache \
     bash \
     curl \
@@ -9,9 +9,13 @@ RUN apk add --no-cache \
     openssl-dev \
     lua5.1 \
     lua5.1-dev \
-    luarocks
+    lua5.1-luarocks \
+    unzip
 
-# Install lua-resty-openidc and lua-resty-http
+# Ensure luarocks is in PATH
+ENV PATH="/usr/bin:$PATH"
+
+# Install required Lua modules
 RUN luarocks install lua-resty-http
 RUN luarocks install lua-resty-openidc
 
