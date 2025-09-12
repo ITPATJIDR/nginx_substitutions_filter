@@ -9,20 +9,22 @@ RUN apk add --no-cache \
     openssl-dev \
     unzip \
     wget \
-    tar
+    tar \
+    readline-dev
 
-# Install luarocks from source
-RUN wget http://luarocks.org/releases/luarocks-2.0.13.tar.gz && \
-    tar -xzvf luarocks-2.0.13.tar.gz && \
-    cd luarocks-2.0.13/ && \
+# Install luarocks from source (latest version 3.12.2)
+RUN wget https://luarocks.github.io/luarocks/releases/luarocks-3.12.2.tar.gz && \
+    tar -xzvf luarocks-3.12.2.tar.gz && \
+    cd luarocks-3.12.2/ && \
     ./configure --prefix=/usr/local/openresty/luajit \
         --with-lua=/usr/local/openresty/luajit/ \
-        --lua-suffix=jit \
-        --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 && \
+        --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 \
+        --with-lua-lib=/usr/local/openresty/luajit/lib \
+        --with-lua-interpreter=luajit && \
     make && \
     make install && \
     cd .. && \
-    rm -rf luarocks-2.0.13*
+    rm -rf luarocks-3.12.2*
 
 # Install required Lua modules
 RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-http
