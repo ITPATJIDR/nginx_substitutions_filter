@@ -39,7 +39,6 @@ services:
       - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM=master
       - KEYCLOAK_CLIENT_ID=nginx-client
-      - KEYCLOAK_CLIENT_SECRET=1Giz1gJyaZEAiSAsH3slrEXz1ayp7aEO
       - APP_URL=http://app:3000
 
 networks:
