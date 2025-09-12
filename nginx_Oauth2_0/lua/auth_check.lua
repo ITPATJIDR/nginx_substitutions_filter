@@ -22,11 +22,6 @@ if not is_valid then
     ngx.exit(401)
 end
 
--- Set user information as nginx variables for use in proxy headers
-ngx.var.user_id = user_info.sub or ""
-ngx.var.user_email = user_info.email or ""
-ngx.var.user_name = user_info.preferred_username or user_info.name or ""
-
 -- Add user info to request headers
 ngx.req.set_header("X-User-ID", user_info.sub or "")
 ngx.req.set_header("X-User-Email", user_info.email or "")
@@ -46,11 +41,14 @@ if ngx.var.content_type and ngx.var.content_type:find("application/json") then
             end
             
             -- Add user context if available
-            if ngx.var.user_id then
-                data.user_id = ngx.var.user_id
+            local user_id = user_info.sub or ""
+            local user_email = user_info.email or ""
+            
+            if user_id ~= "" then
+                data.user_id = user_id
             end
-            if ngx.var.user_email then
-                data.user_email = ngx.var.user_email
+            if user_email ~= "" then
+                data.user_email = user_email
             end
             
             -- Re-encode the body
