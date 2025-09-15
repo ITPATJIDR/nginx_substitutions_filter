@@ -21,17 +21,15 @@
   ],
   "clients": [
     {
-      "clientId": "oauth2-proxy",
+      "clientId": "openresty",
       "protocol": "openid-connect",
       "publicClient": false,
-      "secret": "oauth2-proxy-secret",
+      "secret": "openresty-secret",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8080/oauth2/callback",
-        "http://openresty:8080/oauth2/callback",
-        "http://localhost:4180/oauth2/callback"
+        "http://localhost:8082/*"
       ],
       "webOrigins": [
         "+"
@@ -42,5 +40,3 @@
     }
   ]
 }
-
-
