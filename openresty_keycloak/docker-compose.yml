@@ -7,17 +7,19 @@ services:
       start-dev
       --import-realm
       --hostname-strict=false
-      --hostname-url=http://host.docker.internal:8081
+      --hostname-url=http://192.168.101.13:8081
+      --hostname-admin-url=http://192.168.101.13:8081
+      --http-enabled=true
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
     ports:
       - "8081:8080"
-      - "9000:9990"
     volumes:
       - ./keycloak/example-realm.json:/opt/keycloak/data/import/example-realm.json:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   api:
     build:
