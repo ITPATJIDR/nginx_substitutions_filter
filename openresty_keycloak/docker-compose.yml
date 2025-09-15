@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: keycloak
+    command: >-
+      start-dev
+      --import-realm
+      --hostname-strict=false
+      --hostname-url=http://host.docker.internal:8081
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/example-realm.json:/opt/keycloak/data/import/example-realm.json:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  api:
+    build:
+      context: ./api
+    container_name: example-api
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    expose:
+      - "3000"
+    depends_on:
+      - keycloak
+
+  openresty:
+    build:
+      context: ./openresty
+    container_name: openresty-gateway
+    environment:
+      OIDC_DISCOVERY: http://host.docker.internal:8081/realms/example/.well-known/openid-configuration
+      OIDC_CLIENT_ID: openresty
+      OIDC_CLIENT_SECRET: openresty-secret
+      OIDC_REDIRECT_SCHEME: http
+      SESSION_SECRET: 723p4hR234t36VsCD8g565325IC0022G
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+      - keycloak
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+
