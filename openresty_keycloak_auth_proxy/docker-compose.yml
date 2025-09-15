@@ -83,8 +83,10 @@ services:
       --http-address=0.0.0.0:4180
       --cookie-secure=false
       --set-xauthrequest=true
+      --reverse-proxy=true
       --skip-oidc-discovery=false
       --insecure-oidc-allow-unverified-email=true
+      --code-challenge-method=S256
 
   openresty:
     build:
