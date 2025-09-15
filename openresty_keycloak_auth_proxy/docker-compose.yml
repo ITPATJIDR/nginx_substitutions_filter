@@ -17,10 +17,17 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     command: ["start-dev"]
     networks:
       - auth-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # PostgreSQL for Keycloak
   postgres:
@@ -34,6 +41,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - auth-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # OAuth2 Proxy
   oauth2-proxy:
@@ -54,10 +66,13 @@ services:
     ports:
       - "4180:4180"
     depends_on:
-      - keycloak
-      - openresty
+      keycloak:
+        condition: service_healthy
+      openresty:
+        condition: service_started
     networks:
       - auth-network
+    restart: unless-stopped
 
   # OpenResty (Nginx with Lua)
   openresty:
