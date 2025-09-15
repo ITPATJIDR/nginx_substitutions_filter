@@ -20,6 +20,13 @@ services:
       - "8081:8080"
     volumes:
       - ./keycloak/example-realm.json:/opt/keycloak/data/import/example-realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/realms/master/.well-known/openid-configuration >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
 
   api:
     build:
@@ -30,7 +37,15 @@ services:
     expose:
       - "3000"
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    restart: unless-stopped
 
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
@@ -49,7 +64,15 @@ services:
     expose:
       - "4180"
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "wget -qO- http://localhost:4180/oauth2/healthz | grep -q 'OK' "]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    restart: unless-stopped
 
   openresty:
     build:
@@ -57,10 +80,14 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - api
-      - keycloak
-      - oauth2-proxy
+      api:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      oauth2-proxy:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
 
 
