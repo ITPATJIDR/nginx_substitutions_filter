@@ -62,13 +62,10 @@ services:
       --client-secret=openresty-secret
       --cookie-secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
       --email-domain=*
-      --scope=openid profile email
       --redirect-url=http://localhost:8082/oauth2/callback
       --http-address=0.0.0.0:4180
       --cookie-secure=false
       --set-xauthrequest=true
-      --skip-provider-button=true
-      --upstream=http://api:3000
 
   openresty:
     build:
