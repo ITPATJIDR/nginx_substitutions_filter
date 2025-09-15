@@ -26,10 +26,10 @@
       "publicClient": false,
       "secret": "oauth2-proxy-secret",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8888/*"
+        "http://localhost:8888/oauth2/callback"
       ],
       "webOrigins": [
         "+"

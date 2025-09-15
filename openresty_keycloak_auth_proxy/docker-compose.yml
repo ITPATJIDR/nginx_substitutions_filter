@@ -18,17 +18,23 @@ services:
       - "8081:8080"
     volumes:
       - ./keycloak/example-realm.json:/opt/keycloak/data/import/example-realm.json:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/example/.well-known/openid-configuration"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
     environment:
       OAUTH2_PROXY_PROVIDER: keycloak-oidc
       OAUTH2_PROXY_OIDC_ISSUER_URL: http://keycloak:8080/realms/example
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy
       OAUTH2_PROXY_CLIENT_SECRET: oauth2-proxy-secret
-      # 32-byte base64 cookie secret (example only; replace for production)
       OAUTH2_PROXY_COOKIE_SECRET: dGhpc2lzYXZlcnlzZWN1cmVzZWNyZXQ=
       OAUTH2_PROXY_REVERSE_PROXY: "true"
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
@@ -41,6 +47,11 @@ services:
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
     expose:
       - "4180"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4180/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   api:
     build:
@@ -55,9 +66,9 @@ services:
     build:
       context: ./openresty
     depends_on:
-      - api
-      - oauth2-proxy
+      api:
+        condition: service_started
+      oauth2-proxy:
+        condition: service_healthy
     ports:
       - "8888:8888"
-
-
