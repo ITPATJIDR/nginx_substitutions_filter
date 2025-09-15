@@ -1,6 +1,6 @@
-# OpenResty Keycloak Gateway Makefile
+# Nginx + Keycloak + Express Makefile
 
-.PHONY: build up down logs test clean restart gateway-logs app-logs
+.PHONY: build up down logs test clean restart help
 
 # Build and start services
 build:
@@ -10,9 +10,7 @@ up:
 	docker-compose up -d
 
 # Build and start services
-start: 
-	build 
-	up
+start: build up
 
 # Stop services
 down:
@@ -23,7 +21,7 @@ clean:
 	docker-compose down -v --remove-orphans
 	docker system prune -f
 
-# Force cleanup (for fixing ContainerConfig errors)
+# Force cleanup (for fixing issues)
 force-clean:
 	docker-compose down -v --remove-orphans || true
 	docker container prune -f
@@ -35,8 +33,8 @@ force-clean:
 logs:
 	docker-compose logs -f
 
-gateway-logs:
-	docker-compose logs -f gateway
+nginx-logs:
+	docker-compose logs -f nginx
 
 app-logs:
 	docker-compose logs -f app
@@ -60,10 +58,19 @@ test:
 get-token:
 	@bash get-jwt-token.sh
 
+# Get admin token
+get-admin-token:
+	@bash get-jwt-token.sh admin adminpass
+
 # Test with JWT token
 test-auth:
 	@echo "Testing authentication..."
-	@bash get-jwt-token.sh
+	@bash get-jwt-token.sh testuser testpass
+
+# Test admin access
+test-admin:
+	@echo "Testing admin authentication..."
+	@bash get-jwt-token.sh admin adminpass
 
 # Health checks
 health:
@@ -72,12 +79,10 @@ health:
 	@docker-compose exec postgres pg_isready -U keycloak || echo "PostgreSQL not ready"
 	@echo "\nKeycloak health:"
 	@curl -s http://localhost:8080/health/ready | jq || curl -s http://localhost:8080/health/ready || echo "Keycloak not ready"
-	@echo "\nGateway health:"
-	@curl -s http://localhost:8000/gateway-health | jq || curl -s http://localhost:8000/gateway-health
-	@echo "\nApp health through gateway:"
+	@echo "\nNginx health:"
 	@curl -s http://localhost:8000/health | jq || curl -s http://localhost:8000/health
-	@echo "\nDirect app health:"
-	@curl -s http://localhost:3000/health | jq || curl -s http://localhost:3000/health
+	@echo "\nApp health (direct):"
+	@docker-compose exec app curl -s http://localhost:3000/health | jq || echo "App not ready"
 
 # Development mode (rebuild and start)
 dev: clean build
@@ -90,6 +95,27 @@ fix: force-clean build up
 status:
 	docker-compose ps
 
+# Open Keycloak admin console
+keycloak-admin:
+	@echo "Keycloak Admin Console: http://localhost:8080"
+	@echo "Username: admin"
+	@echo "Password: admin"
+
+# Show service URLs
+urls:
+	@echo "Service URLs:"
+	@echo "============="
+	@echo "Nginx Gateway: http://localhost:8000"
+	@echo "Keycloak Admin: http://localhost:8080 (admin/admin)"
+	@echo "Express App (direct): http://localhost:3000"
+	@echo ""
+	@echo "Test Endpoints:"
+	@echo "- Public: http://localhost:8000/"
+	@echo "- API (auth required): http://localhost:8000/api/data"
+	@echo "- User info: http://localhost:8000/user"
+	@echo "- Admin (admin role): http://localhost:8000/admin"
+	@echo "- Health: http://localhost:8000/health"
+
 # Help
 help:
 	@echo "Available commands:"
@@ -99,17 +125,21 @@ help:
 	@echo "  down      - Stop services"
 	@echo "  clean     - Stop services and remove volumes"
 	@echo "  logs      - Follow all logs"
-	@echo "  gateway-logs - Follow gateway logs only"
+	@echo "  nginx-logs - Follow nginx logs only"
 	@echo "  app-logs  - Follow app logs only"
 	@echo "  keycloak-logs - Follow keycloak logs only"
 	@echo "  postgres-logs - Follow postgres logs only"
 	@echo "  restart   - Restart services"
 	@echo "  test      - Run tests"
-	@echo "  get-token - Get JWT token from Keycloak"
-	@echo "  test-auth - Test authentication with JWT token"
+	@echo "  get-token - Get JWT token for testuser"
+	@echo "  get-admin-token - Get JWT token for admin"
+	@echo "  test-auth - Test authentication with testuser"
+	@echo "  test-admin - Test admin authentication"
 	@echo "  health    - Check service health"
 	@echo "  dev       - Clean rebuild for development"
-	@echo "  fix       - Force cleanup and restart (fixes ContainerConfig errors)"
+	@echo "  fix       - Force cleanup and restart"
 	@echo "  force-clean - Force cleanup all Docker resources"
 	@echo "  status    - Show service status"
+	@echo "  keycloak-admin - Show Keycloak admin info"
+	@echo "  urls      - Show all service URLs"
 	@echo "  help      - Show this help"

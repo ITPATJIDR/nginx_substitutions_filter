@@ -39,12 +39,12 @@
   },
   "clients": [
     {
-      "clientId": "test-client",
-      "name": "Test Client",
-      "description": "Test client for OpenResty gateway",
+      "clientId": "nginx-gateway",
+      "name": "Nginx Gateway Client",
+      "description": "Client for nginx gateway authentication",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "test-secret",
+      "secret": "nginx-secret",
       "redirectUris": ["*"],
       "webOrigins": ["*"],
       "bearerOnly": true,
@@ -56,7 +56,14 @@
       "publicClient": false,
       "protocol": "openid-connect",
       "attributes": {
-        "access.token.lifespan": "300"
+        "access.token.lifespan": "300",
+        "user.info.response.signature.alg": "RS256",
+        "request.object.signature.alg": "RS256",
+        "use.refresh.tokens": "true",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
       },
       "protocolMappers": [
         {
@@ -116,7 +123,7 @@
           }
         },
         {
-          "name": "realm_access",
+          "name": "realm_roles",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-realm-role-mapper",
           "consentRequired": false,
@@ -138,12 +145,29 @@
       "enabled": true,
       "firstName": "Test",
       "lastName": "User",
-      "email": "test@test.com",
+      "email": "test@example.com",
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
           "value": "testpass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"],
+      "attributes": {}
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@example.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "adminpass",
           "temporary": false
         }
       ],
@@ -155,11 +179,11 @@
     "realm": [
       {
         "name": "user",
-        "description": "User role"
+        "description": "Standard user role"
       },
       {
         "name": "admin",
-        "description": "Admin role"
+        "description": "Administrator role"
       }
     ]
   }
