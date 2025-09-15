@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0.7
+    image: quay.io/keycloak/keycloak:24.0.5
     command: >-
       start-dev
       --import-realm
@@ -14,20 +14,33 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HOSTNAME_PORT: "8080"
     ports:
       - "8081:8080"
     volumes:
       - ./keycloak/example-realm.json:/opt/keycloak/data/import/example-realm.json:ro
-    restart: unless-stopped
-    extra_hosts:
-      - "localhost:host-gateway"
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && exec 3<&- && exec 3>&- || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 90s
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    depends_on:
+      - keycloak
+    environment:
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://keycloak:8080/realms/example
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy
+      OAUTH2_PROXY_CLIENT_SECRET: oauth2-proxy-secret
+      # 32-byte base64 cookie secret (example only; replace for production)
+      OAUTH2_PROXY_COOKIE_SECRET: dGhpc2lzYXZlcnlzZWN1cmVzZWNyZXQxMjM0NQ==
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8080/oauth2/callback
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_COOKIE_SAMESITE: lax
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+    expose:
+      - "4180"
 
   api:
     build:
@@ -37,67 +50,14 @@ services:
       PORT: "3000"
     expose:
       - "3000"
-    depends_on:
-      - keycloak
-    restart: unless-stopped
-
-  oauth2-proxy:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
-    environment:
-      OAUTH2_PROXY_PROVIDER: keycloak-oidc
-      OAUTH2_PROXY_OIDC_ISSUER_URL: http://keycloak:8080/realms/example
-      OAUTH2_PROXY_CLIENT_ID: openresty
-      OAUTH2_PROXY_CLIENT_SECRET: openresty-secret
-      OAUTH2_PROXY_COOKIE_SECRET: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      OAUTH2_PROXY_SCOPE: "openid profile email"
-      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8082/oauth2/callback
-      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: "false"
-      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
-      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
-      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "false"
-    expose:
-      - "4180"
-    depends_on:
-      - keycloak
-    restart: unless-stopped
-    extra_hosts:
-      - "localhost:host-gateway"
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/4180 && exec 3<&- && exec 3>&- || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    command: >
-      --provider=keycloak-oidc
-      --oidc-issuer-url=http://keycloak:8080/realms/example
-      --client-id=openresty
-      --client-secret=openresty-secret
-      --cookie-secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-      --email-domain=*
-      --redirect-url=http://localhost:8082/oauth2/callback
-      --http-address=0.0.0.0:4180
-      --cookie-secure=false
-      --set-xauthrequest=true
-      --reverse-proxy=true
-      --skip-oidc-discovery=false
-      --insecure-oidc-allow-unverified-email=true
-      --code-challenge-method=S256
 
   openresty:
     build:
       context: ./openresty
-    ports:
-      - "8082:8080"
     depends_on:
       - api
-      - keycloak
       - oauth2-proxy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: unless-stopped
-
+    ports:
+      - "8080:8080"
 
 
