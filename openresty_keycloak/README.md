@@ -13,7 +13,7 @@ Prereqs: Docker Desktop 4.24+, make optional.
 
 1. Start stack:
    - `docker compose -f openresty_keycloak/docker-compose.yml up -d --build`
-2. Browse `http://localhost:8080/api/hello` → you will be redirected to Keycloak on port 8081.
+2. Browse `http://localhost:8082/api/hello` → you will be redirected to Keycloak on port 8081.
 3. Login with `test / test123`.
 4. You should receive JSON: `{ message: "Hello, test!", ... }`.
 

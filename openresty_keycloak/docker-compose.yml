@@ -39,7 +39,7 @@ services:
       OIDC_REDIRECT_SCHEME: http
       SESSION_SECRET: 723p4hR234t36VsCD8g565325IC0022G
     ports:
-      - "8080:8080"
+      - "8082:8080"
     depends_on:
       - api
       - keycloak
