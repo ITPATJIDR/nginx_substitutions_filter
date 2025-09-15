@@ -7,8 +7,6 @@ services:
       start-dev
       --import-realm
       --hostname-strict=false
-      --hostname-url=http://localhost:8081
-      --hostname-admin-url=http://localhost:8081
       --http-enabled=true
     environment:
       KEYCLOAK_ADMIN: admin
@@ -16,11 +14,15 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HOSTNAME_PORT: "8080"
+      KC_PROXY: "edge"
     ports:
       - "8081:8080"
     volumes:
       - ./keycloak/example-realm.json:/opt/keycloak/data/import/example-realm.json:ro
     restart: unless-stopped
+    extra_hosts:
+      - "localhost:host-gateway"
 
   api:
     build:
@@ -55,6 +57,8 @@ services:
     depends_on:
       - keycloak
     restart: unless-stopped
+    extra_hosts:
+      - "localhost:host-gateway"
     command: >
       --provider=keycloak-oidc
       --oidc-issuer-url=http://keycloak:8080/realms/example
@@ -66,6 +70,8 @@ services:
       --http-address=0.0.0.0:4180
       --cookie-secure=false
       --set-xauthrequest=true
+      --skip-oidc-discovery=false
+      --insecure-oidc-allow-unverified-email=true
 
   openresty:
     build:
