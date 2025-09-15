@@ -1,3 +1,4 @@
+# api/Dockerfile
 FROM node:18-alpine
 
 WORKDIR /app
@@ -6,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --only=production
+RUN npm install
 
 # Copy application code
 COPY . .

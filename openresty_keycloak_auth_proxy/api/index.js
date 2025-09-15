@@ -1,26 +1,93 @@
-'use strict'
+// api/app.js
+const express = require('express');
+const cors = require('cors');
 
-const express = require('express')
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const app = express()
-const port = process.env.PORT || 3000
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Middleware to log user info from OAuth2-proxy
+app.use((req, res, next) => {
+    req.user = {
+        username: req.headers['x-user'] || 'anonymous',
+        email: req.headers['x-email'] || '',
+        groups: req.headers['x-groups'] || ''
+    };
+    console.log('User info:', req.user);
+    next();
+});
+
+// Routes
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'healthy', 
+        service: 'express-api',
+        timestamp: new Date().toISOString()
+    });
+});
 
 app.get('/', (req, res) => {
-  res.json({ message: 'API root', time: new Date().toISOString() })
-})
+    res.json({
+        message: 'Welcome to the secured Express API',
+        user: req.user,
+        endpoints: [
+            'GET /',
+            'GET /health',
+            'GET /profile',
+            'GET /protected',
+            'POST /data'
+        ]
+    });
+});
 
-app.get('/api/public/hello', (req, res) => {
-  res.json({ message: 'Hello from public route' })
-})
+app.get('/profile', (req, res) => {
+    res.json({
+        message: 'User profile information',
+        user: req.user,
+        serverTime: new Date().toISOString()
+    });
+});
 
-app.get('/api/protected/hello', (req, res) => {
-  const user = req.header('X-User') || 'unknown'
-  const email = req.header('X-Email') || null
-  res.json({ message: 'Hello from protected route', user, email })
-})
+app.get('/protected', (req, res) => {
+    if (!req.user.email) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    res.json({
+        message: 'This is a protected resource',
+        user: req.user,
+        data: {
+            secret: 'This is confidential data',
+            accessTime: new Date().toISOString()
+        }
+    });
+});
 
-app.listen(port, () => {
-  console.log(`API listening on ${port}`)
-})
+app.post('/data', (req, res) => {
+    res.json({
+        message: 'Data received',
+        user: req.user,
+        receivedData: req.body,
+        timestamp: new Date().toISOString()
+    });
+});
 
+// Error handling
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+});
 
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Endpoint not found' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Express API server running on port ${PORT}`);
+});
+
+module.exports = app;
