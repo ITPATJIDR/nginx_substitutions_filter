@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
     command: >
       --provider=keycloak-oidc
-      --oidc-issuer-url=http://keycloak:8080/realms/example
+      --oidc-issuer-url=http://192.168.101.13:8081/realms/example
       --client-id=openresty
       --client-secret=openresty-secret
       --cookie-secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
