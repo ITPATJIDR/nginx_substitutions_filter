@@ -31,11 +31,15 @@ local realm = "test"
 1. **Build and start the services:**
    ```bash
    docker-compose up --build
+   # OR using the Makefile
+   make start
    ```
 
 2. **Access the application:**
-   - Gateway: http://localhost:8000
+   - Gateway: http://localhost:8000 (requires JWT token)
    - Direct app access: http://localhost:3000
+   - Gateway health: http://localhost:8000/gateway-health (no auth required)
+   - App health through gateway: http://localhost:8000/health (no auth required)
 
 ## Testing
 
@@ -52,12 +56,17 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" http://localhost:8000/
 
 ### Test Endpoints
 
-The Express app provides several endpoints:
+The system provides several endpoints:
 
-- `GET /` - Main endpoint with user information
-- `GET /health` - Health check
-- `GET /user` - User information only
-- `GET /debug` - Debug information including all headers
+**Through Gateway (http://localhost:8000):**
+- `GET /` - Main endpoint with user information (requires auth)
+- `GET /health` - App health check (no auth required)
+- `GET /user` - User information only (requires auth)
+- `GET /debug` - Debug information including all headers (requires auth)
+- `GET /gateway-health` - Gateway status (no auth required)
+
+**Direct App Access (http://localhost:3000):**
+- All endpoints available without authentication
 
 ## How It Works
 
@@ -116,6 +125,10 @@ docker-compose up gateway
 1. **401 Unauthorized**: Check JWT token validity and Keycloak configuration
 2. **502 Bad Gateway**: Ensure the Express app is running and accessible
 3. **SSL Verification**: The gateway is configured with `ssl_verify = "no"` for development
+4. **Health Check Failures**: 
+   - Use `/gateway-health` for Docker health checks (no auth required)
+   - Use `/health` to check the backend app through the gateway (no auth required)
+   - Regular endpoints like `/` still require JWT authentication
 
 ## Production Considerations
 

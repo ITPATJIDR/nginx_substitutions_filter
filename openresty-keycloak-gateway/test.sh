@@ -27,19 +27,26 @@ else
     echo -e "${RED}✗ Gateway should return 401 for unauthenticated requests (got HTTP $response)${NC}"
 fi
 
-# Test gateway health (if accessible)
+# Test gateway health endpoint
 echo -e "${YELLOW}3. Testing gateway health endpoint...${NC}"
-response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
-if [ "$response" = "401" ]; then
-    echo -e "${YELLOW}! Gateway health endpoint requires authentication${NC}"
-elif [ "$response" = "200" ]; then
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/gateway-health)
+if [ "$response" = "200" ]; then
     echo -e "${GREEN}✓ Gateway health endpoint is accessible${NC}"
 else
     echo -e "${RED}✗ Gateway health endpoint returned HTTP $response${NC}"
 fi
 
+# Test app health through gateway
+echo -e "${YELLOW}4. Testing app health through gateway...${NC}"
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
+if [ "$response" = "200" ]; then
+    echo -e "${GREEN}✓ App health endpoint accessible through gateway${NC}"
+else
+    echo -e "${RED}✗ App health endpoint through gateway returned HTTP $response${NC}"
+fi
+
 # Test with sample JWT (this will fail but shows the error message)
-echo -e "${YELLOW}4. Testing with sample JWT token...${NC}"
+echo -e "${YELLOW}5. Testing with sample JWT token...${NC}"
 echo "Expected: This should fail with JWT verification error"
 curl -s -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" http://localhost:8000/ | head -n 3
 
