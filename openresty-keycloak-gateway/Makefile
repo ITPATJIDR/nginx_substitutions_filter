@@ -50,6 +50,15 @@ test:
 	@sleep 5
 	@bash test.sh
 
+# Get JWT token from Keycloak
+get-token:
+	@bash get-jwt-token.sh
+
+# Test with JWT token
+test-auth:
+	@echo "Testing authentication..."
+	@bash get-jwt-token.sh
+
 # Health checks
 health:
 	@echo "Checking service health..."
@@ -84,6 +93,8 @@ help:
 	@echo "  app-logs  - Follow app logs only"
 	@echo "  restart   - Restart services"
 	@echo "  test      - Run tests"
+	@echo "  get-token - Get JWT token from Keycloak"
+	@echo "  test-auth - Test authentication with JWT token"
 	@echo "  health    - Check service health"
 	@echo "  dev       - Clean rebuild for development"
 	@echo "  fix       - Force cleanup and restart (fixes ContainerConfig errors)"

@@ -4,27 +4,24 @@ This setup provides an OpenResty-based API gateway that authenticates requests u
 
 ## Architecture
 
+- **Keycloak** (Port 8080): Authentication server providing JWT tokens
 - **OpenResty Gateway** (Port 8000): Validates JWT tokens from Keycloak and adds user information to headers
 - **Express App** (Port 3000): Simple backend application that receives and displays user information
 
 ## Prerequisites
 
 - Docker and Docker Compose
-- A running Keycloak instance (configured in nginx.conf)
 
 ## Configuration
 
-The gateway is configured to work with Keycloak at `https://sso.keycloak.test` with:
-- Client ID: `test`
-- Realm: `test`
+The setup includes a complete Keycloak instance with pre-configured:
+- **Realm**: `test`
+- **Client ID**: `test-client`
+- **Client Secret**: `test-secret`
+- **Test User**: `testuser` / `testpass`
+- **Roles**: `user`, `admin`
 
-Update these values in `nginx.conf` if needed:
-
-```lua
-local keycloak_base_url = "https://sso.keycloak.test"
-local client_id = "test"
-local realm = "test"
-```
+The realm configuration is automatically imported from `keycloak-init/test-realm.json`.
 
 ## Quick Start
 
@@ -35,11 +32,23 @@ local realm = "test"
    make start
    ```
 
-2. **Access the application:**
-   - Gateway: http://localhost:8000 (requires JWT token)
-   - Direct app access: http://localhost:3000
-   - Gateway health: http://localhost:8000/gateway-health (no auth required)
-   - App health through gateway: http://localhost:8000/health (no auth required)
+2. **Wait for services to start** (Keycloak takes ~60 seconds):
+   ```bash
+   # Check if all services are healthy
+   make health
+   ```
+
+3. **Get a JWT token:**
+   ```bash
+   make get-token
+   ```
+
+4. **Access the application:**
+   - **Keycloak Admin**: http://localhost:8080 (admin/admin)
+   - **Gateway**: http://localhost:8000 (requires JWT token)
+   - **Direct app**: http://localhost:3000
+   - **Gateway health**: http://localhost:8000/gateway-health (no auth required)
+   - **App health**: http://localhost:8000/health (no auth required)
 
 ## Testing
 
@@ -51,6 +60,14 @@ Response: 401 Unauthorized
 
 ### With Valid JWT Token
 ```bash
+# Get token and test automatically
+make test-auth
+
+# Or manually:
+# 1. Get token
+make get-token
+
+# 2. Use the token (replace YOUR_JWT_TOKEN with actual token)
 curl -H "Authorization: Bearer YOUR_JWT_TOKEN" http://localhost:8000/
 ```
 
