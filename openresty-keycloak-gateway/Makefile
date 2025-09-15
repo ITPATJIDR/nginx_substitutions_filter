@@ -21,6 +21,15 @@ down:
 # Stop and remove volumes
 clean:
 	docker-compose down -v --remove-orphans
+	docker system prune -f
+
+# Force cleanup (for fixing ContainerConfig errors)
+force-clean:
+	docker-compose down -v --remove-orphans || true
+	docker container prune -f
+	docker image prune -f
+	docker volume prune -f
+	docker network prune -f
 
 # View logs
 logs:
@@ -55,6 +64,9 @@ health:
 dev: clean build
 	docker-compose up
 
+# Fix docker compose issues and restart
+fix: force-clean build up
+
 # Show status
 status:
 	docker-compose ps
@@ -74,5 +86,7 @@ help:
 	@echo "  test      - Run tests"
 	@echo "  health    - Check service health"
 	@echo "  dev       - Clean rebuild for development"
+	@echo "  fix       - Force cleanup and restart (fixes ContainerConfig errors)"
+	@echo "  force-clean - Force cleanup all Docker resources"
 	@echo "  status    - Show service status"
 	@echo "  help      - Show this help"
