@@ -21,15 +21,15 @@
   ],
   "clients": [
     {
-      "clientId": "openresty",
+      "clientId": "oauth2-proxy",
       "protocol": "openid-connect",
       "publicClient": false,
-      "secret": "openresty-secret",
+      "secret": "oauth2-proxy-secret",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8082/*"
+        "http://localhost:8888/*"
       ],
       "webOrigins": [
         "+"
