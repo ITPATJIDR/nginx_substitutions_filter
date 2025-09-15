@@ -24,11 +24,11 @@ services:
     extra_hosts:
       - "localhost:host-gateway"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/realms/example/.well-known/openid_configuration || exit 1"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && exec 3<&- && exec 3>&- || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
 
   api:
     build:
@@ -61,17 +61,16 @@ services:
     expose:
       - "4180"
     depends_on:
-      keycloak:
-        condition: service_healthy
+      - keycloak
     restart: unless-stopped
     extra_hosts:
       - "localhost:host-gateway"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4180/ping"]
-      interval: 10s
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/4180 && exec 3<&- && exec 3>&- || exit 1"]
+      interval: 15s
       timeout: 5s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     command: >
       --provider=keycloak-oidc
       --oidc-issuer-url=http://keycloak:8080/realms/example
@@ -94,12 +93,9 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      api:
-        condition: service_started
-      keycloak:
-        condition: service_healthy
-      oauth2-proxy:
-        condition: service_healthy
+      - api
+      - keycloak
+      - oauth2-proxy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
