@@ -10,7 +10,9 @@ up:
 	docker-compose up -d
 
 # Build and start services
-start: build up
+start: 
+	build 
+	up
 
 # Stop services
 down:
