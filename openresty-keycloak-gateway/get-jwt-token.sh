@@ -22,7 +22,7 @@ PASSWORD="testpass"
 
 # Wait for Keycloak to be ready
 echo -e "${YELLOW}Checking if Keycloak is ready...${NC}"
-max_attempts=30
+max_attempts=60
 attempt=1
 
 while [ $attempt -le $max_attempts ]; do
@@ -38,7 +38,13 @@ done
 
 if [ $attempt -gt $max_attempts ]; then
     echo -e "${RED}✗ Keycloak is not ready after $max_attempts attempts${NC}"
-    echo "Make sure Keycloak is running: docker-compose up keycloak"
+    echo "Make sure Keycloak is running: make start"
+    echo "Check logs: make keycloak-logs"
+    echo ""
+    echo "Troubleshooting:"
+    echo "1. PostgreSQL must be healthy first"
+    echo "2. Keycloak startup can take 60-90 seconds"
+    echo "3. Check for import errors in Keycloak logs"
     exit 1
 fi
 

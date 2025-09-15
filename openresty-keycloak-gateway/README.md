@@ -4,6 +4,7 @@ This setup provides an OpenResty-based API gateway that authenticates requests u
 
 ## Architecture
 
+- **PostgreSQL**: Database for Keycloak (internal)
 - **Keycloak** (Port 8080): Authentication server providing JWT tokens
 - **OpenResty Gateway** (Port 8000): Validates JWT tokens from Keycloak and adds user information to headers
 - **Express App** (Port 3000): Simple backend application that receives and displays user information
@@ -32,10 +33,13 @@ The realm configuration is automatically imported from `keycloak-init/test-realm
    make start
    ```
 
-2. **Wait for services to start** (Keycloak takes ~60 seconds):
+2. **Wait for services to start** (PostgreSQL + Keycloak takes ~90 seconds):
    ```bash
    # Check if all services are healthy
    make health
+   
+   # Or watch logs to see startup progress
+   make keycloak-logs
    ```
 
 3. **Get a JWT token:**

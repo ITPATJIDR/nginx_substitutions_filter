@@ -41,6 +41,12 @@ gateway-logs:
 app-logs:
 	docker-compose logs -f app
 
+keycloak-logs:
+	docker-compose logs -f keycloak
+
+postgres-logs:
+	docker-compose logs -f postgres
+
 # Restart services
 restart: down up
 
@@ -62,7 +68,11 @@ test-auth:
 # Health checks
 health:
 	@echo "Checking service health..."
-	@echo "Gateway health:"
+	@echo "PostgreSQL health:"
+	@docker-compose exec postgres pg_isready -U keycloak || echo "PostgreSQL not ready"
+	@echo "\nKeycloak health:"
+	@curl -s http://localhost:8080/health/ready | jq || curl -s http://localhost:8080/health/ready || echo "Keycloak not ready"
+	@echo "\nGateway health:"
 	@curl -s http://localhost:8000/gateway-health | jq || curl -s http://localhost:8000/gateway-health
 	@echo "\nApp health through gateway:"
 	@curl -s http://localhost:8000/health | jq || curl -s http://localhost:8000/health
@@ -91,6 +101,8 @@ help:
 	@echo "  logs      - Follow all logs"
 	@echo "  gateway-logs - Follow gateway logs only"
 	@echo "  app-logs  - Follow app logs only"
+	@echo "  keycloak-logs - Follow keycloak logs only"
+	@echo "  postgres-logs - Follow postgres logs only"
 	@echo "  restart   - Restart services"
 	@echo "  test      - Run tests"
 	@echo "  get-token - Get JWT token from Keycloak"
