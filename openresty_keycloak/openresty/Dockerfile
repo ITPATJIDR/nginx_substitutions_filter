@@ -1,6 +1,6 @@
 FROM openresty/openresty:1.21.4.3-alpine
 
-RUN apk add --no-cache ca-certificates bash curl \
+RUN apk add --no-cache ca-certificates bash curl perl git unzip \
     && update-ca-certificates
 
 # Install required OpenResty packages (openidc + deps)
