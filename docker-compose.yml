@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: express_app
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  nginx:
+    build: ./nginx_subfilter
+    container_name: nginx_server
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
