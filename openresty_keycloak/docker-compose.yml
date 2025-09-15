@@ -7,7 +7,7 @@ services:
       start-dev
       --import-realm
       --hostname-strict=false
-      --hostname-url=http://host.docker.internal:8081
+      --hostname-url=http://host.docker.internal:8080
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -33,7 +33,7 @@ services:
     build:
       context: ./openresty
     environment:
-      OIDC_DISCOVERY: http://host.docker.internal:8081/realms/example/.well-known/openid-configuration
+      OIDC_DISCOVERY: http://keycloak:8080/realms/example/.well-known/openid-configuration
       OIDC_CLIENT_ID: openresty
       OIDC_CLIENT_SECRET: openresty-secret
       OIDC_REDIRECT_SCHEME: http
