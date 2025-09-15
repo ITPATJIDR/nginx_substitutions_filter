@@ -23,10 +23,10 @@
       "publicClient": false,
       "secret": "openresty-secret",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8080/*"
+        "http://localhost:8082/*"
       ],
       "webOrigins": [
         "+"
