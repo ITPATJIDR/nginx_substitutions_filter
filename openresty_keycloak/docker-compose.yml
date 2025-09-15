@@ -3,7 +3,6 @@ version: "3.8"
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.5
-    container_name: keycloak
     command: >-
       start-dev
       --import-realm
@@ -22,7 +21,6 @@ services:
   api:
     build:
       context: ./api
-    container_name: example-api
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -34,7 +32,6 @@ services:
   openresty:
     build:
       context: ./openresty
-    container_name: openresty-gateway
     environment:
       OIDC_DISCOVERY: http://host.docker.internal:8081/realms/example/.well-known/openid-configuration
       OIDC_CLIENT_ID: openresty
