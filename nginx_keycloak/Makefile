@@ -1,145 +1,67 @@
-# Nginx + Keycloak + Express Makefile
+.PHONY: help build up down logs clean restart status keycloak-setup
 
-.PHONY: build up down logs test clean restart help
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  build         - Build all Docker images"
+	@echo "  up           - Start all services"
+	@echo "  down         - Stop all services"
+	@echo "  logs         - Show logs for all services"
+	@echo "  clean        - Clean up containers, networks, and volumes"
+	@echo "  restart      - Restart all services"
+	@echo "  status       - Show status of all services"
+	@echo "  keycloak-setup - Show Keycloak setup instructions"
 
-# Build and start services
+# Build all images
 build:
 	docker-compose build
 
+# Start all services
 up:
 	docker-compose up -d
+	@echo "Services starting..."
+	@echo "Waiting for services to be ready..."
+	@sleep 10
+	@echo "Services should be available at:"
+	@echo "  - Application: http://localhost"
+	@echo "  - Keycloak Admin: http://localhost:8080"
+	@echo "  - Express App Direct: http://localhost:3000"
 
-# Build and start services
-start: build up
-
-# Stop services
+# Stop all services
 down:
 	docker-compose down
 
-# Stop and remove volumes
+# Show logs
+logs:
+	docker-compose logs -f
+
+# Clean up everything
 clean:
 	docker-compose down -v --remove-orphans
 	docker system prune -f
 
-# Force cleanup (for fixing issues)
-force-clean:
-	docker-compose down -v --remove-orphans || true
-	docker container prune -f
-	docker image prune -f
-	docker volume prune -f
-	docker network prune -f
-
-# View logs
-logs:
-	docker-compose logs -f
-
-nginx-logs:
-	docker-compose logs -f nginx
-
-app-logs:
-	docker-compose logs -f app
-
-keycloak-logs:
-	docker-compose logs -f keycloak
-
-postgres-logs:
-	docker-compose logs -f postgres
-
 # Restart services
 restart: down up
 
-# Test the setup
-test:
-	@echo "Testing the setup..."
-	@sleep 5
-	@bash test.sh
-
-# Get JWT token from Keycloak
-get-token:
-	@bash get-jwt-token.sh
-
-# Get admin token
-get-admin-token:
-	@bash get-jwt-token.sh admin adminpass
-
-# Test with JWT token
-test-auth:
-	@echo "Testing authentication..."
-	@bash get-jwt-token.sh testuser testpass
-
-# Test admin access
-test-admin:
-	@echo "Testing admin authentication..."
-	@bash get-jwt-token.sh admin adminpass
-
-# Health checks
-health:
-	@echo "Checking service health..."
-	@echo "PostgreSQL health:"
-	@docker-compose exec postgres pg_isready -U keycloak || echo "PostgreSQL not ready"
-	@echo "\nKeycloak health:"
-	@curl -s http://localhost:8080/health/ready | jq || curl -s http://localhost:8080/health/ready || echo "Keycloak not ready"
-	@echo "\nNginx health:"
-	@curl -s http://localhost:8000/health | jq || curl -s http://localhost:8000/health
-	@echo "\nApp health (direct):"
-	@docker-compose exec app curl -s http://localhost:3000/health | jq || echo "App not ready"
-
-# Development mode (rebuild and start)
-dev: clean build
-	docker-compose up
-
-# Fix docker compose issues and restart
-fix: force-clean build up
-
-# Show status
+# Show service status
 status:
 	docker-compose ps
-
-# Open Keycloak admin console
-keycloak-admin:
-	@echo "Keycloak Admin Console: http://localhost:8080"
-	@echo "Username: admin"
-	@echo "Password: admin"
-
-# Show service URLs
-urls:
-	@echo "Service URLs:"
-	@echo "============="
-	@echo "Nginx Gateway: http://localhost:8000"
-	@echo "Keycloak Admin: http://localhost:8080 (admin/admin)"
-	@echo "Express App (direct): http://localhost:3000"
 	@echo ""
-	@echo "Test Endpoints:"
-	@echo "- Public: http://localhost:8000/"
-	@echo "- API (auth required): http://localhost:8000/api/data"
-	@echo "- User info: http://localhost:8000/user"
-	@echo "- Admin (admin role): http://localhost:8000/admin"
-	@echo "- Health: http://localhost:8000/health"
+	@echo "Service Health:"
+	@docker-compose exec -T app curl -s http://localhost:3000/health || echo "App not ready"
+	@docker-compose exec -T keycloak curl -s http://localhost:8080/health/ready || echo "Keycloak not ready"
 
-# Help
-help:
-	@echo "Available commands:"
-	@echo "  build     - Build Docker images"
-	@echo "  up        - Start services in background"
-	@echo "  start     - Build and start services"
-	@echo "  down      - Stop services"
-	@echo "  clean     - Stop services and remove volumes"
-	@echo "  logs      - Follow all logs"
-	@echo "  nginx-logs - Follow nginx logs only"
-	@echo "  app-logs  - Follow app logs only"
-	@echo "  keycloak-logs - Follow keycloak logs only"
-	@echo "  postgres-logs - Follow postgres logs only"
-	@echo "  restart   - Restart services"
-	@echo "  test      - Run tests"
-	@echo "  get-token - Get JWT token for testuser"
-	@echo "  get-admin-token - Get JWT token for admin"
-	@echo "  test-auth - Test authentication with testuser"
-	@echo "  test-admin - Test admin authentication"
-	@echo "  health    - Check service health"
-	@echo "  dev       - Clean rebuild for development"
-	@echo "  fix       - Force cleanup and restart"
-	@echo "  force-clean - Force cleanup all Docker resources"
-	@echo "  status    - Show service status"
-	@echo "  keycloak-admin - Show Keycloak admin info"
-	@echo "  urls      - Show all service URLs"
-	@echo "  help      - Show this help"
+# Show Keycloak setup instructions
+keycloak-setup:
+	@echo "Keycloak Setup Instructions:"
+	@echo "1. Access Keycloak admin console: http://localhost:8080"
+	@echo "2. Login with: admin / admin123"
+	@echo "3. Create a new client:"
+	@echo "   - Client ID: nginx-client"
+	@echo "   - Client Protocol: openid-connect"
+	@echo "   - Access Type: confidential"
+	@echo "   - Valid Redirect URIs: http://localhost/callback"
+	@echo "   - Web Origins: http://localhost"
+	@echo "4. Copy the client secret from the Credentials tab"
+	@echo "5. Update the KEYCLOAK_CLIENT_SECRET in .env file"
+	@echo "6. Restart services: make restart"

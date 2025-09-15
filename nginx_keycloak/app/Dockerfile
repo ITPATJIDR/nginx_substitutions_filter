@@ -1,24 +1,27 @@
 FROM node:18-alpine
 
-# Set working directory
-WORKDIR /app
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Create app directory
+WORKDIR /usr/src/app
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --only=production
+RUN npm ci --only=production && npm cache clean --force
 
-# Copy application code
+# Copy app source
 COPY . .
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+    adduser -S nodeuser -u 1001
 
-# Change ownership
-RUN chown -R nextjs:nodejs /app
-USER nextjs
+# Change ownership of the app directory
+RUN chown -R nodeuser:nodejs /usr/src/app
+USER nodeuser
 
 # Expose port
 EXPOSE 3000
