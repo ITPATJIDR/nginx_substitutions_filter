@@ -50,16 +50,28 @@ check_services() {
     else
         print_test_result "Keycloak Service" "FAIL" "Keycloak is not running on port 8081"
         echo -e "${RED}Please start the services with: docker compose up -d --build${NC}"
-        exit 1
+        return 1
     fi
     
     # Check OpenResty
-    if curl -s -f "$OPENRESTY_URL" > /dev/null 2>&1; then
-        print_test_result "OpenResty Service" "PASS" "OpenResty is running on port 8082"
+    echo -e "${YELLOW}Testing OpenResty connection to $OPENRESTY_URL...${NC}"
+    local openresty_response=$(curl -s -w "%{http_code}" "$OPENRESTY_URL" 2>/dev/null || echo "000")
+    local openresty_status="${openresty_response: -3}"
+    
+    if [ "$openresty_status" = "200" ] || [ "$openresty_status" = "000" ]; then
+        if [ "$openresty_status" = "200" ]; then
+            print_test_result "OpenResty Service" "PASS" "OpenResty is running on port 8082"
+        else
+            print_test_result "OpenResty Service" "FAIL" "OpenResty is not running on port 8082 (connection refused)"
+        fi
     else
-        print_test_result "OpenResty Service" "FAIL" "OpenResty is not running on port 8082"
+        print_test_result "OpenResty Service" "FAIL" "OpenResty returned status $openresty_status"
+    fi
+    
+    if [ "$openresty_status" != "200" ]; then
         echo -e "${RED}Please start the services with: docker compose up -d --build${NC}"
-        exit 1
+        echo -e "${YELLOW}Debug info: curl response was '$openresty_response'${NC}"
+        return 1
     fi
 }
 
@@ -295,7 +307,11 @@ main() {
         echo -e "${YELLOW}   Install jq for better token handling: https://stedolan.github.io/jq/${NC}\n"
     fi
     
-    check_services
+    if ! check_services; then
+        echo -e "${RED}❌ Service check failed. Please ensure all services are running.${NC}"
+        print_summary
+        exit 1
+    fi
     echo ""
     
     test_keycloak_endpoints
