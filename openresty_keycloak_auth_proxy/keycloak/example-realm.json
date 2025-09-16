@@ -9,7 +9,7 @@
         "http://192.168.101.13:4180/oauth2/callback",
         "http://192.168.101.13/oauth2/callback"
       ],
-      "secret": "oauth2-proxy-secret",
+      "secret": "ilsakdjflck@:I#lJfkjelfkjoekcancknacincoi3nco2=",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
