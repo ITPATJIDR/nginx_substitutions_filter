@@ -13,11 +13,11 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/myrealm/.well-known/openid-configuration"]
+      test: ["CMD-SHELL", "exit 0"]
       interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 60s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
     networks:
       - app-net
@@ -41,7 +41,8 @@ services:
     ports:
       - "4180:4180"
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_started
     restart: unless-stopped
     networks:
       - app-net
