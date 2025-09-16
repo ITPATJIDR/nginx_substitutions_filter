@@ -4,10 +4,13 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.1
     container_name: keycloak
-    command: start-dev --hostname keycloak --import-realm
+    command: start-dev --hostname 192.168.101.13 --hostname-port 8080 --import-realm
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HOSTNAME=192.168.101.13
+      - KC_HOSTNAME_PORT=8080
+      - KC_HOSTNAME_STRICT=false
     volumes:
       - ./keycloak-realm.json:/opt/keycloak/data/import/keycloak-realm.json:ro
     ports:
@@ -37,7 +40,7 @@ services:
       - OAUTH2_PROXY_EMAIL_DOMAINS=*
       - OAUTH2_PROXY_SET_XAUTHREQUEST=true
       - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-      - OAUTH2_PROXY_REDIRECT_URL=http://localhost/oauth2/callback
+      - OAUTH2_PROXY_REDIRECT_URL=http://192.168.101.13/oauth2/callback
     ports:
       - "4180:4180"
     depends_on:
