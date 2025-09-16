@@ -4,7 +4,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.1
     container_name: keycloak
-    command: start-dev --hostname-admin keycloak --import-realm
+    command: start-dev --hostname keycloak --import-realm
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
