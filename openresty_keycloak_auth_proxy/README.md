@@ -1,6 +1,6 @@
 ## OpenResty + OAuth2-Proxy + Keycloak + Express API (docker-compose)
 
-Reverse-proxy stack where OpenResty protects routes via `auth_request` to `oauth2-proxy`, which authenticates users against Keycloak (OIDC). On success, JWT tokens are passed to the Express API for verification.
+Reverse-proxy stack where OpenResty protects routes via `auth_request` to `oauth2-proxy`, which authenticates users against Keycloak (OIDC). On success, JWT tokens and user headers are forwarded to the Express API. The Express API is a simple RESTful service that receives user information from OAuth2-Proxy without doing any JWT verification itself.
 
 ### What runs where
 - OpenResty: http://localhost
@@ -39,9 +39,8 @@ Wait for Keycloak health to pass (compose waits on it).
 ### Notes
 - Ensure the Keycloak client `oauth2-proxy-client` secret matches both `.env` and `keycloak-realm.json`.
 - `OAUTH2_PROXY_COOKIE_SECRET` must be base64-encoded 32 bytes (e.g. `openssl rand -base64 32`).
-- OpenResty forwards JWT tokens via `Authorization: Bearer` and `X-Access-Token` headers.
-- Express API verifies JWT tokens using Keycloak's public keys.
-- Protected endpoints use JWT verification instead of cookie-based auth.
+- OpenResty forwards user headers (`X-Forwarded-User`, `X-Forwarded-Email`, `X-Forwarded-Groups`) and JWT token (`Authorization: Bearer <token>`) to the Express API.
+- The Express API receives user information from OAuth2-Proxy headers - no JWT verification needed in the API.
 
 ### References
 - oauth2-proxy integration: https://oauth2-proxy.github.io/oauth2-proxy/configuration/integration
