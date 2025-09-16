@@ -1,50 +1,46 @@
-## OpenResty + oauth2-proxy + Keycloak + Express API (docker-compose)
+## OpenResty + OAuth2-Proxy + Keycloak + Express API (docker-compose)
 
-This example wires a simple Express API behind OpenResty (Nginx). Authentication is enforced via `auth_request` to `oauth2-proxy`, which delegates login to Keycloak (OIDC).
+Reverse-proxy stack where OpenResty protects routes via `auth_request` to `oauth2-proxy`, which authenticates users against Keycloak (OIDC). On success, user headers are forwarded to the Express API.
 
-- OpenResty listens on http://localhost:8080
-- Keycloak (dev) on http://localhost:8081
-- oauth2-proxy runs internally, exposed via OpenResty at `/oauth2/*`
+### What runs where
+- OpenResty: http://localhost
+- Keycloak: http://localhost:8080 (realm `myrealm`)
+- OAuth2-Proxy: http://localhost:4180 (only for callback and debugging)
+- Express API: http://localhost:3000 (behind OpenResty)
 
-### Components
-- Express API: `api/` with public and protected routes
-- OpenResty: `openresty/nginx.conf` uses `auth_request` to oauth2-proxy
-- oauth2-proxy: configured for Keycloak OIDC
-- Keycloak: preloaded realm `example` with a test user and an `oauth2-proxy` confidential client
+### Files
+- `docker-compose.yml` – defines services
+- `keycloak-realm.json` – imports realm `myrealm` and client `oauth2-proxy-client`
+- `openresty/nginx.conf` – Nginx with `auth_request` integration
+- `api/` – simple Express API
 
-### Quick start
+### Setup
+1) Create `.env` in this folder with:
+```
+OAUTH2_PROXY_CLIENT_SECRET=<Keycloak client secret for oauth2-proxy-client>
+OAUTH2_PROXY_COOKIE_SECRET=<base64 32-byte secret>
+```
+
+2) Start the stack:
 ```bash
-cd openresty_keycloak_auth_proxy
 docker compose up -d --build
 ```
 
-Wait ~10-20s for Keycloak to boot the first time.
+Wait for Keycloak health to pass (compose waits on it).
 
-### Test
-- Public route (no auth):
-  - http://localhost:8080/api/public/hello
-
-- Protected route (triggers login):
-  - http://localhost:8080/api/protected/hello
-  - You will be redirected to oauth2-proxy sign-in and then to Keycloak
-
-Keycloak credentials (dev):
-- Username: `test`
-- Password: `test123`
-
-After login, the API receives headers set by oauth2-proxy (when `--set-xauthrequest` is enabled) such as `X-User` and `X-Email`.
+### Test the flow
+1) Open http://localhost in a browser.
+2) You’ll be redirected to OAuth2-Proxy/Keycloak login.
+3) Use the dev user from `keycloak-realm.json`:
+   - username: `testuser`
+   - password: `password`
+4) After login, you’ll be redirected back to the Express API via OpenResty.
 
 ### Notes
-- `oauth2-proxy` is configured via env vars (see `docker-compose.yml`). Key flags reflect the docs:
-  - `--reverse-proxy`
-  - `--set-xauthrequest`
-  - `--pass-access-token`
-  - Provider: Keycloak OIDC with issuer URL of the realm
-  - `--redirect-url=http://localhost:8080/oauth2/callback`
-- Cookie secret must be base64-encoded and of correct length (example value included for local use only).
+- Ensure the Keycloak client `oauth2-proxy-client` secret matches both `.env` and `keycloak-realm.json`.
+- `OAUTH2_PROXY_COOKIE_SECRET` must be base64-encoded 32 bytes (e.g. `openssl rand -base64 32`).
+- OpenResty forwards `X-User`, `X-Email`, `X-Groups` into the API after auth.
 
 ### References
-- oauth2-proxy Nginx auth_request integration: https://oauth2-proxy.github.io/oauth2-proxy/configuration/integration
-- oauth2-proxy Keycloak OIDC provider: https://oauth2-proxy.github.io/oauth2-proxy/configuration/providers/keycloak_oidc
-
-
+- oauth2-proxy integration: https://oauth2-proxy.github.io/oauth2-proxy/configuration/integration
+- Keycloak OIDC provider: https://oauth2-proxy.github.io/oauth2-proxy/configuration/providers/keycloak_oidc
