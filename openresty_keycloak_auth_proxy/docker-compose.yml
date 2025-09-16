@@ -40,8 +40,7 @@ services:
     ports:
       - "4180:4180"
     depends_on:
-      keycloak:
-        condition: service_healthy
+      - keycloak
     networks:
       - app-net
 
