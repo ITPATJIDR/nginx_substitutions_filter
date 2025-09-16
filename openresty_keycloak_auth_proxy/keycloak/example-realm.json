@@ -56,13 +56,19 @@
       "enabled": true,
       "email": "testuser@example.com",
       "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "requiredActions": [],
       "credentials": [
         {
           "type": "password",
           "value": "password",
           "temporary": false
         }
-      ]
+      ],
+      "attributes": {
+        "email": ["testuser@example.com"]
+      }
     }
   ]
 }
