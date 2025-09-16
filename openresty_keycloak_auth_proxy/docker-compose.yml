@@ -4,7 +4,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.1
     container_name: keycloak
-    command: start-dev --hostname 192.168.101.13 --hostname-port 8080 --import-realm
+    command: start-dev --hostname 192.168.101.13 --import-realm
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
