@@ -5,8 +5,6 @@
     {
       "clientId": "oauth2-proxy-client",
       "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": false,
       "redirectUris": [
         "http://192.168.101.13:4180/oauth2/callback",
         "http://192.168.101.13/oauth2/callback"
