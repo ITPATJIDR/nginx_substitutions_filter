@@ -9,7 +9,6 @@
       "publicClient": false,
       "redirectUris": [
         "http://localhost:4180/oauth2/callback",
-        "http://openresty/oauth2/callback",
         "http://localhost/oauth2/callback"
       ],
       "secret": "${OAUTH2_PROXY_CLIENT_SECRET}",

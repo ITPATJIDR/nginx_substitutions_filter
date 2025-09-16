@@ -13,11 +13,11 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "exit 0"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/myrealm/.well-known/openid-configuration"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 10
+      start_period: 60s
     restart: unless-stopped
     networks:
       - app-net
@@ -27,7 +27,7 @@ services:
     container_name: oauth2-proxy
     environment:
       - OAUTH2_PROXY_PROVIDER=oidc
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://keycloak:8080/realms/myrealm
+      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://192.168.101.13:8080/realms/myrealm
       - OAUTH2_PROXY_CLIENT_ID=oauth2-proxy-client
       - OAUTH2_PROXY_CLIENT_SECRET=oauth2-proxy-secret
       - OAUTH2_PROXY_COOKIE_SECRET=OQINaROshtE9TcZkNAm-5Zs2Pv3xaWytBmc5W7sPX7w=
@@ -41,8 +41,7 @@ services:
     ports:
       - "4180:4180"
     depends_on:
-      keycloak:
-        condition: service_started
+      - keycloak
     restart: unless-stopped
     networks:
       - app-net
