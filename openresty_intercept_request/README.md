@@ -18,7 +18,8 @@ This project demonstrates how to use OpenResty with Lua to intercept failed back
   - Supports both in-memory and temp file request bodies
   - Sends all request details to Kafka for replay/analysis
 - **Logs Application Errors (4xx, 5xx responses)**
-  - Logs response metadata to Kafka
+  - Captures complete request including body, headers, and metadata
+  - Supports both in-memory and temp file request bodies
   - Tracks timing and performance metrics
 - **Asynchronous Kafka Producer**
   - Minimal performance impact on request processing
@@ -129,21 +130,30 @@ Complete request details including body and headers:
 ```
 
 ### Application Errors (4xx, 5xx responses)
-Response metadata and timing:
+Complete request details including body and headers:
 
 ```json
 {
   "timestamp": 1697845200,
   "log_type": "response_log",
   "client_ip": "172.18.0.1",
-  "request_method": "GET",
-  "request_uri": "/api/status",
-  "request_path": "/api/status",
+  "request_method": "POST",
+  "request_uri": "/api/users",
+  "request_path": "/api/users",
+  "query_string": "id=123",
+  "request_body": "{\"username\":\"testuser\",\"email\":\"test@example.com\"}",
+  "request_headers": {
+    "host": "localhost:8082",
+    "user-agent": "curl/7.81.0",
+    "content-type": "application/json",
+    "x-custom-header": "test-value"
+  },
   "status": 404,
   "body_bytes_sent": 57,
   "request_time": 0.002,
   "upstream_response_time": "0.002",
   "user_agent": "curl/8.5.0",
+  "referer": null,
   "server_name": "_"
 }
 ```

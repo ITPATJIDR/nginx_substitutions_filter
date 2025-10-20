@@ -20,6 +20,25 @@ for broker in string.gmatch(kafka_brokers, "[^,]+") do
     table.insert(broker_list, {host = host, port = port})
 end
 
+-- Collect request details
+local request_body = nil
+ngx.req.read_body()
+local body_data = ngx.req.get_body_data()
+
+if body_data then
+    request_body = body_data
+else
+    -- If body was spooled to temp file
+    local body_file = ngx.req.get_body_file()
+    if body_file then
+        local file = io.open(body_file, "r")
+        if file then
+            request_body = file:read("*all")
+            file:close()
+        end
+    end
+end
+
 -- Prepare log data
 local log_data = {
     timestamp = ngx.time(),
@@ -27,6 +46,9 @@ local log_data = {
     request_method = ngx.var.request_method,
     request_uri = ngx.var.request_uri,
     request_path = ngx.var.uri,
+    query_string = ngx.var.query_string,
+    request_body = request_body,
+    request_headers = ngx.req.get_headers(),
     status = status,
     body_bytes_sent = tonumber(ngx.var.body_bytes_sent) or 0,
     request_time = tonumber(ngx.var.request_time) or 0,
