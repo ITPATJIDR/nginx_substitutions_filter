@@ -1,83 +1,82 @@
 #!/bin/bash
 
-# Test script for OpenResty Request Interceptor
-
-set -e
-
-echo "======================================"
-echo "OpenResty Request Interceptor Test"
-echo "======================================"
-
-# Colors
-RED='\033[0;31m'
+# Colors for output
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Test function
+BASE_URL="http://localhost:8082"
+
+echo -e "${YELLOW}=== OpenResty Kafka Interceptor Test Script ===${NC}\n"
+
+# Function to make request and show result
 test_endpoint() {
     local method=$1
-    local url=$2
-    local data=$3
-    local description=$4
+    local endpoint=$2
+    local description=$3
+    local expected_status=$4
     
-    echo -e "\n${YELLOW}Testing: ${description}${NC}"
-    echo "Method: $method"
-    echo "URL: $url"
+    echo -e "${YELLOW}Test: ${description}${NC}"
+    echo "  ${method} ${BASE_URL}${endpoint}"
     
-    if [ -z "$data" ]; then
-        response=$(curl -s -w "\n%{http_code}" -X "$method" "$url")
+    response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X ${method} ${BASE_URL}${endpoint})
+    http_body=$(echo "$response" | sed -e 's/HTTP_STATUS\:.*//g')
+    http_status=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
+    
+    echo "  Status: ${http_status}"
+    echo "  Response: ${http_body}"
+    
+    if [ "$http_status" == "$expected_status" ]; then
+        echo -e "  ${GREEN}✓ PASS${NC}\n"
     else
-        response=$(curl -s -w "\n%{http_code}" -X "$method" "$url" -H "Content-Type: application/json" -d "$data")
-    fi
-    
-    http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | sed '$d')
-    
-    echo "HTTP Status: $http_code"
-    echo "Response: $body"
-    
-    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-        echo -e "${GREEN}✓ Test passed${NC}"
-        return 0
-    elif [ "$http_code" -eq 503 ]; then
-        echo -e "${YELLOW}✓ Test passed (expected 503 - request intercepted)${NC}"
-        return 0
-    else
-        echo -e "${RED}✗ Test failed${NC}"
-        return 1
+        echo -e "  ${RED}✗ FAIL (expected ${expected_status})${NC}\n"
     fi
 }
 
-echo -e "\n${GREEN}Step 1: Testing with backend available${NC}"
-echo "========================================"
+# Test 1: Health check
+test_endpoint "GET" "/health" "Health Check" "200"
 
-test_endpoint "GET" "http://localhost:8080/health" "" "Health check endpoint"
-test_endpoint "GET" "http://localhost:8080/api/health" "" "API health endpoint"
-test_endpoint "GET" "http://localhost:8080/api/users" "" "Get users"
-test_endpoint "GET" "http://localhost:8080/api/data" "" "Get data"
-test_endpoint "POST" "http://localhost:8080/api/users" '{"name":"Test User","email":"test@example.com"}' "Create user"
+# Test 2: Root endpoint
+test_endpoint "GET" "/" "Root Endpoint" "200"
 
-echo -e "\n${YELLOW}Step 2: Stop the API backend${NC}"
-echo "========================================"
-echo "Run: docker-compose stop api"
-echo "Then press Enter to continue..."
-read -r
+# Test 3: Status endpoint
+test_endpoint "GET" "/api/status" "API Status" "200"
 
-echo -e "\n${RED}Step 3: Testing with backend unavailable${NC}"
-echo "========================================"
+# Test 4: Hello endpoint
+test_endpoint "GET" "/api/hello" "Hello Endpoint" "200"
 
-test_endpoint "GET" "http://localhost:8080/api/health" "" "API health (should be intercepted)"
-test_endpoint "POST" "http://localhost:8080/api/users" '{"name":"John Doe","email":"john@example.com"}' "Create user (should be intercepted)"
+# Test 5: Random endpoint (may fail)
+echo -e "${YELLOW}Test: Random Endpoint (30% failure rate)${NC}"
+echo "  Running 5 requests to see failures..."
+for i in {1..5}; do
+    status=$(curl -s -o /dev/null -w "%{http_code}" ${BASE_URL}/api/random)
+    if [ "$status" == "503" ]; then
+        echo -e "  Request $i: ${RED}503 Failed${NC} (logged to Kafka)"
+    else
+        echo -e "  Request $i: ${GREEN}200 Success${NC}"
+    fi
+done
+echo ""
 
-echo -e "\n${YELLOW}Step 4: Check Kafka messages${NC}"
-echo "========================================"
-echo "Run the following command to see messages in Kafka:"
-echo "docker-compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic failed-requests --from-beginning"
+# Test 6: Backend unavailability simulation
+echo -e "${YELLOW}=== Testing Backend Unavailability ===${NC}"
+echo "This will test the error interceptor when backend is down"
+echo ""
+echo "To test manually:"
+echo "  1. Stop the backend: docker-compose stop api"
+echo "  2. Make request: curl ${BASE_URL}/api/status"
+echo "  3. Check Kafka messages"
+echo "  4. Start backend: docker-compose start api"
+echo ""
 
-echo -e "\n${GREEN}Step 5: Restart the API${NC}"
-echo "========================================"
-echo "Run: docker-compose start api"
+# Test 7: 404 endpoint
+test_endpoint "GET" "/api/nonexistent" "Non-existent Endpoint (404)" "404"
 
-echo -e "\n${GREEN}All tests completed!${NC}"
+echo -e "${YELLOW}=== Kafka Messages ===${NC}"
+echo "To view messages in Kafka, run:"
+echo "  docker-compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic failed-requests --from-beginning"
+echo ""
+echo "Or use the consumer script:"
+echo "  ./consume_kafka.sh"
 

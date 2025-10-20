@@ -1,0 +1,18 @@
+version: "3.8"
+
+# Development overrides
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  api:
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./api/src:/app/src:ro
+    command: npm run dev
+
+  openresty:
+    volumes:
+      - ./openresty/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./openresty/lua:/usr/local/openresty/nginx/lua:ro
+

@@ -1,206 +1,161 @@
-# OpenResty Request Interceptor with Kafka
+# OpenResty with Kafka Interceptor
 
-This project demonstrates how to use OpenResty with Lua to intercept failed backend requests and produce them to Kafka for later processing.
+This project demonstrates how to use OpenResty with Lua to intercept failed backend requests and send them to Kafka for processing/analysis.
 
 ## Architecture
 
-```
-Client → OpenResty (Lua) → Express Backend
-                ↓
-             (on error)
-                ↓
-              Kafka
-```
+- **Express API**: Simple Node.js backend that sometimes fails (for testing)
+- **OpenResty**: Nginx-based reverse proxy with Lua scripting
+- **Kafka + Zookeeper**: Message broker for collecting failed requests
+- **Lua Scripts**:
+  - `kafka_logger.lua`: Logs all failed responses (4xx, 5xx) to Kafka
+  - `error_handler.lua`: Intercepts backend connection failures and sends to Kafka
 
-### Components
+## Features
 
-1. **Express Backend (API)**: Simple Node.js/Express API server
-2. **OpenResty**: Nginx with Lua module for request interception
-3. **Kafka + Zookeeper**: Message broker for storing failed requests
-4. **Lua Scripts**:
-   - `intercept_request.lua`: Pre-processes incoming requests
-   - `handle_error.lua`: Intercepts failed requests and produces to Kafka
-
-## How It Works
-
-1. Requests come into OpenResty on port 8080
-2. OpenResty attempts to proxy the request to the Express backend
-3. If the backend is unavailable (502, 503, 504 errors):
-   - The Lua script intercepts the request
-   - Captures request details (method, URI, headers, body)
-   - Produces a message to Kafka topic `failed-requests`
-   - Returns a friendly error message to the client
-4. Failed requests can be consumed from Kafka for retry or analysis
+- Intercepts requests that can't reach the backend (502, 503, 504 errors)
+- Logs all failed responses (4xx, 5xx status codes) to Kafka
+- Captures full request details including headers, body, and metadata
+- Asynchronous Kafka producer for minimal performance impact
+- Graceful error handling with user-friendly responses
 
 ## Prerequisites
 
 - Docker
 - Docker Compose
 
-## Setup and Run
+## Quick Start
 
-### 1. Start all services
+1. **Build and start all services:**
+   ```bash
+   make up
+   # or
+   docker-compose up -d
+   ```
 
-```bash
-docker-compose up --build
-```
+2. **Check logs:**
+   ```bash
+   make logs
+   # or
+   docker-compose logs -f
+   ```
 
-This will start:
-- Zookeeper (port 2181)
-- Kafka (ports 9092 internal, 29092 external)
-- Express API (port 3000)
-- OpenResty (port 8080)
+3. **Test the API:**
+   ```bash
+   # Health check
+   curl http://localhost:8082/health
 
-### 2. Test normal requests
+   # Successful request
+   curl http://localhost:8082/api/status
 
-```bash
-# Health check
-curl http://localhost:8080/health
+   # Random endpoint (30% failure rate)
+   curl http://localhost:8082/api/random
 
-# API endpoint (backend available)
-curl http://localhost:8080/api/health
-curl http://localhost:8080/api/users
-curl http://localhost:8080/api/data
-```
+   # Test backend unavailability (stop backend first)
+   docker-compose stop api
+   curl http://localhost:8082/api/status
+   docker-compose start api
+   ```
 
-### 3. Test failed request interception
+## Kafka Consumer Test
 
-Stop the backend to simulate failure:
-
-```bash
-docker-compose stop api
-```
-
-Now make requests - they will be intercepted and sent to Kafka:
-
-```bash
-curl -X POST http://localhost:8080/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com"}'
-```
-
-### 4. Consume messages from Kafka
-
-To see the failed requests in Kafka:
+To view messages in Kafka:
 
 ```bash
-docker-compose exec kafka kafka-console-consumer \
-  --bootstrap-server localhost:9092 \
+# Connect to Kafka container
+docker-compose exec kafka bash
+
+# Consume messages from the failed-requests topic
+kafka-console-consumer --bootstrap-server localhost:9092 \
   --topic failed-requests \
-  --from-beginning
+  --from-beginning \
+  --property print.timestamp=true
 ```
 
-### 5. Restart backend
+## Message Format
 
-```bash
-docker-compose start api
-```
-
-## Kafka Message Format
-
-Failed requests are sent to Kafka with the following JSON structure:
+Failed requests are sent to Kafka with the following structure:
 
 ```json
 {
-  "timestamp": 1697812345.678,
-  "method": "POST",
-  "uri": "/api/users",
-  "path": "/api/users",
-  "query_string": "",
-  "headers": {
-    "content-type": "application/json",
-    "host": "localhost:8080"
-  },
-  "body": "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}",
-  "remote_addr": "172.18.0.1",
-  "backend_url": "http://api:3000",
-  "error_reason": "Backend unavailable (502/503/504)"
+  "timestamp": 1697845200,
+  "iso_timestamp": "2024-10-20T12:00:00Z",
+  "error_type": "backend_unavailable",
+  "client_ip": "172.18.0.1",
+  "request_method": "GET",
+  "request_uri": "/api/status",
+  "request_path": "/api/status",
+  "query_string": null,
+  "request_body": null,
+  "user_agent": "curl/7.81.0",
+  "referer": null,
+  "upstream_addr": "172.18.0.2:3000",
+  "server_name": "_",
+  "log_type": "backend_error",
+  "request_headers": {
+    "host": "localhost:8082",
+    "user-agent": "curl/7.81.0"
+  }
 }
 ```
 
 ## Configuration
 
-### Environment Variables
+Environment variables can be modified in `docker-compose.yml`:
 
-You can customize the setup by modifying environment variables in `docker-compose.yml`:
+- `KAFKA_BROKERS`: Kafka broker addresses (default: `kafka:9092`)
+- `KAFKA_TOPIC`: Topic name for failed requests (default: `failed-requests`)
 
-**OpenResty:**
-- `KAFKA_BROKER`: Kafka broker address (default: `kafka:9092`)
-- `BACKEND_URL`: Backend API URL (default: `http://api:3000`)
+## Cleanup
 
-**Express API:**
-- `PORT`: API server port (default: `3000`)
-- `NODE_ENV`: Node environment (default: `production`)
+```bash
+make clean
+# or
+docker-compose down -v
+```
+
+## Development
+
+To rebuild after code changes:
+
+```bash
+make rebuild
+# or
+docker-compose build --no-cache
+docker-compose up -d
+```
 
 ## Project Structure
 
 ```
-openresty_intercept_request/
-├── docker-compose.yml          # Docker Compose configuration
-├── api/                        # Express backend
+.
+├── api/                    # Express backend
+│   ├── src/
+│   │   └── index.js       # API implementation
 │   ├── Dockerfile
-│   ├── package.json
-│   └── index.js
-├── openresty/                  # OpenResty configuration
+│   └── package.json
+├── openresty/             # OpenResty configuration
+│   ├── lua/
+│   │   ├── kafka_logger.lua      # Logs failed responses
+│   │   └── error_handler.lua     # Handles backend errors
 │   ├── Dockerfile
-│   ├── nginx.conf
-│   └── lua/
-│       ├── intercept_request.lua
-│       └── handle_error.lua
+│   └── nginx.conf
+├── docker-compose.yml
+├── Makefile
 └── README.md
 ```
 
 ## Troubleshooting
 
-### Check service logs
-
-```bash
-# OpenResty logs
-docker-compose logs -f openresty
-
-# Kafka logs
-docker-compose logs -f kafka
-
-# API logs
-docker-compose logs -f api
-```
-
-### Verify Kafka topics
-
-```bash
-docker-compose exec kafka kafka-topics \
-  --bootstrap-server localhost:9092 \
-  --list
-```
-
-### Check OpenResty configuration
-
-```bash
-docker-compose exec openresty cat /usr/local/openresty/nginx/conf/nginx.conf
-```
-
-## Cleanup
-
-```bash
-docker-compose down -v
-```
-
-## Use Cases
-
-This pattern is useful for:
-
-1. **Request Buffering**: Store requests when backend is temporarily unavailable
-2. **Async Processing**: Queue requests for background processing
-3. **Audit Trail**: Log all failed requests for analysis
-4. **Retry Mechanism**: Consume from Kafka and retry failed requests
-5. **Circuit Breaking**: Implement circuit breaker patterns with Kafka as buffer
+1. **Kafka connection issues**: Make sure all services are running with `docker-compose ps`
+2. **Backend connection errors**: Check API logs with `docker-compose logs api`
+3. **Lua script errors**: Check OpenResty logs with `docker-compose logs openresty`
 
 ## Next Steps
 
-- Implement a Kafka consumer to retry failed requests
 - Add authentication/authorization
-- Implement request rate limiting
-- Add metrics and monitoring (Prometheus/Grafana)
-- Implement request deduplication
-- Add multiple backend servers with load balancing
+- Implement request retry logic
+- Add metrics and monitoring
+- Create a consumer service to process failed requests from Kafka
+- Add dead letter queue for persistent failures
 

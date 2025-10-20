@@ -1,13 +1,15 @@
 {
-  "name": "api",
+  "name": "example-api",
   "version": "1.0.0",
-  "description": "Simple Express API backend",
-  "main": "index.js",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src/index.js",
+    "dev": "NODE_ENV=development node src/index.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.19.2",
+    "morgan": "^1.10.0"
   }
 }
 
