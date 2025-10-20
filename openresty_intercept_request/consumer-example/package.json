@@ -1,0 +1,14 @@
+{
+  "name": "kafka-consumer-example",
+  "version": "1.0.0",
+  "description": "Example Kafka consumer for processing failed requests",
+  "main": "consumer.js",
+  "scripts": {
+    "start": "node consumer.js"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "axios": "^1.6.0"
+  }
+}
+
