@@ -19,8 +19,19 @@ end
 local request_body = nil
 ngx.req.read_body()
 local body_data = ngx.req.get_body_data()
+
 if body_data then
     request_body = body_data
+else
+    -- If body was spooled to temp file
+    local body_file = ngx.req.get_body_file()
+    if body_file then
+        local file = io.open(body_file, "r")
+        if file then
+            request_body = file:read("*all")
+            file:close()
+        end
+    end
 end
 
 -- Prepare error data for Kafka

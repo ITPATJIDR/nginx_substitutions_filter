@@ -13,11 +13,19 @@ This project demonstrates how to use OpenResty with Lua to intercept failed back
 
 ## Features
 
-- Intercepts requests that can't reach the backend (502, 503, 504 errors)
-- Logs all failed responses (4xx, 5xx status codes) to Kafka
-- Captures full request details including headers, body, and metadata
-- Asynchronous Kafka producer for minimal performance impact
-- Graceful error handling with user-friendly responses
+- **Intercepts Backend Unavailable Errors (502, 503, 504)**
+  - Captures complete request including body, headers, and metadata
+  - Supports both in-memory and temp file request bodies
+  - Sends all request details to Kafka for replay/analysis
+- **Logs Application Errors (4xx, 5xx responses)**
+  - Logs response metadata to Kafka
+  - Tracks timing and performance metrics
+- **Asynchronous Kafka Producer**
+  - Minimal performance impact on request processing
+  - Configurable timeout and retry settings
+- **Graceful Error Handling**
+  - User-friendly error responses
+  - Detailed logging for debugging
 
 ## Prerequisites
 
@@ -57,47 +65,90 @@ This project demonstrates how to use OpenResty with Lua to intercept failed back
    docker-compose start api
    ```
 
-## Kafka Consumer Test
+## Testing
+
+### Test Backend Unavailability
+```bash
+# Run comprehensive test script
+chmod +x test_backend_unavailable.sh
+./test_backend_unavailable.sh
+```
+
+### Kafka Consumer Test
 
 To view messages in Kafka:
 
 ```bash
-# Connect to Kafka container
-docker-compose exec kafka bash
-
-# Consume messages from the failed-requests topic
-kafka-console-consumer --bootstrap-server localhost:9092 \
+# View all messages
+docker-compose exec kafka kafka-console-consumer \
+  --bootstrap-server localhost:9092 \
   --topic failed-requests \
-  --from-beginning \
-  --property print.timestamp=true
+  --from-beginning
+
+# View with JSON formatting
+docker-compose exec kafka kafka-console-consumer \
+  --bootstrap-server localhost:9092 \
+  --topic failed-requests \
+  --from-beginning | jq .
+
+# Filter backend errors only
+docker-compose exec kafka kafka-console-consumer \
+  --bootstrap-server localhost:9092 \
+  --topic failed-requests \
+  --from-beginning | jq 'select(.log_type == "backend_error")'
 ```
 
 ## Message Format
 
-Failed requests are sent to Kafka with the following structure:
+### Backend Errors (502, 503, 504)
+Complete request details including body and headers:
 
 ```json
 {
   "timestamp": 1697845200,
   "iso_timestamp": "2024-10-20T12:00:00Z",
   "error_type": "backend_unavailable",
+  "log_type": "backend_error",
   "client_ip": "172.18.0.1",
-  "request_method": "GET",
-  "request_uri": "/api/status",
-  "request_path": "/api/status",
-  "query_string": null,
-  "request_body": null,
+  "request_method": "POST",
+  "request_uri": "/api/users",
+  "request_path": "/api/users",
+  "query_string": "id=123",
+  "request_body": "{\"username\":\"testuser\",\"email\":\"test@example.com\"}",
+  "request_headers": {
+    "host": "localhost:8082",
+    "user-agent": "curl/7.81.0",
+    "content-type": "application/json"
+  },
   "user_agent": "curl/7.81.0",
   "referer": null,
   "upstream_addr": "172.18.0.2:3000",
   "server_name": "_",
-  "log_type": "backend_error",
-  "request_headers": {
-    "host": "localhost:8082",
-    "user-agent": "curl/7.81.0"
-  }
+  "server_port": "8080"
 }
 ```
+
+### Application Errors (4xx, 5xx responses)
+Response metadata and timing:
+
+```json
+{
+  "timestamp": 1697845200,
+  "log_type": "response_log",
+  "client_ip": "172.18.0.1",
+  "request_method": "GET",
+  "request_uri": "/api/status",
+  "request_path": "/api/status",
+  "status": 404,
+  "body_bytes_sent": 57,
+  "request_time": 0.002,
+  "upstream_response_time": "0.002",
+  "user_agent": "curl/8.5.0",
+  "server_name": "_"
+}
+```
+
+> **📖 For detailed documentation, see [KAFKA_LOGGING.md](KAFKA_LOGGING.md)**
 
 ## Configuration
 
