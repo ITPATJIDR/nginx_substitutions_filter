@@ -1,7 +1,7 @@
 FROM openresty/openresty:alpine
 
-# Install lua-resty-kafka and dependencies
-RUN apk add --no-cache git && \
+# Install dependencies and lua-resty-kafka
+RUN apk add --no-cache git perl && \
     opm get doubaokun/lua-resty-kafka && \
     apk del git
 
