@@ -15,11 +15,14 @@ let users = [
 // 1. GET /users/:id (mirrors getUser)
 app.get('/users/:id', (req, res) => {
     const id = req.params.id;
+    console.log(req.params)
     console.log(`GET /users/${id} called`);
 
     const user = users.find(u => u.id === id);
     if (user) {
-        res.json({ name: user.name, email: user.email });
+        const ResponseJson = { name: user.name, email: user.email }
+        console.log(`Response: ${ResponseJson}`);
+        res.json(test);
     } else {
         res.status(404).json({ error: 'User not found' });
     }

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  openresty:
+    build: .
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Mount configuration and lua scripts for easier development/reloading
+      - ./conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
+      - ./lua:/usr/local/openresty/nginx/lua
