@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  soap_service:
+    build: ./soap
+    ports:
+      - "8000:8000"
+    container_name: soap_service
+
+  rest_service:
+    build: ./rest
+    ports:
+      - "3000:3000"
+    container_name: rest_service
+
+  nginx_middleware:
+    build: ./nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rest_service
+    container_name: nginx_middleware
+    volumes:
+       # Mount config and lua for development access without rebuild
+       - ./nginx/conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
+       - ./nginx/lua:/usr/local/openresty/nginx/lua

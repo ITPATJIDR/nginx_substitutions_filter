@@ -1,0 +1,16 @@
+### 1. Get User by ID (mirrors getUser)
+GET http://localhost:3000/users/1
+Accept: application/json
+
+### 2. Create User (mirrors createUser)
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "name": "Bob Rest",
+    "email": "bob@rest.com"
+}
+
+### 3. List Users (mirrors listUsers)
+GET http://localhost:3000/users
+Accept: application/json
