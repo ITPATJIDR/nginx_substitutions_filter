@@ -1,7 +1,11 @@
-FROM openresty/openresty:alpine
+FROM openresty/openresty:latest
 
-# Install dependencies
-RUN apk add --no-cache gcc musl-dev luarocks
+# Install dependencies (using apt-get for Debian-based image)
+RUN apt-get update && apt-get install -y \
+    luarocks \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install xml2lua
 RUN luarocks install xml2lua
@@ -15,3 +19,4 @@ COPY lua/ /usr/local/openresty/nginx/lua/
 EXPOSE 8080
 
 CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+
