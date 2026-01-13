@@ -67,6 +67,53 @@ app.get('/users', (req, res) => {
     });
 });
 
+// ==================== SHOP ENDPOINTS ====================
+let shops = [
+    { id: '1', name: 'Coffee Shop', location: 'Bangkok' },
+    { id: '2', name: 'Book Store', location: 'Chiang Mai' }
+];
+
+// GET /shops/:id (getShop)
+app.get('/shops/:id', (req, res) => {
+    const id = req.params.id;
+    console.log(`GET /shops/${id} called`);
+
+    const shop = shops.find(s => s.id === id);
+    if (shop) {
+        res.json({ name: shop.name, location: shop.location });
+    } else {
+        res.status(404).json({ error: 'Shop not found' });
+    }
+});
+
+// POST /shops (createShop)
+app.post('/shops', (req, res) => {
+    const { name, location } = req.body;
+    console.log('POST /shops called with:', req.body);
+
+    if (!name || !location) {
+        return res.status(400).json({ error: 'Name and location are required' });
+    }
+
+    const newId = (shops.length + 1).toString();
+    const newShop = {
+        id: newId,
+        name: name,
+        location: location
+    };
+    shops.push(newShop);
+
+    res.status(201).json({ id: newId, status: 'Success' });
+});
+
+// GET /shops (listShops)
+app.get('/shops', (req, res) => {
+    console.log('GET /shops called');
+    res.json({
+        shops: shops
+    });
+});
+
 app.listen(port, () => {
     console.log(`REST API server listening on port ${port}`);
 });
