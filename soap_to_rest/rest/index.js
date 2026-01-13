@@ -22,7 +22,7 @@ app.get('/users/:id', (req, res) => {
     if (user) {
         const ResponseJson = { name: user.name, email: user.email }
         console.log(`Response: ${ResponseJson}`);
-        res.json(test);
+        res.json(ResponseJson);
     } else {
         res.status(404).json({ error: 'User not found' });
     }
