@@ -61,6 +61,8 @@ if not xml_body then
     return
 end
 
+ngx.log(ngx.INFO, "[SOAP-TO-REST] 1. Intercepted SOAP Request:\n", xml_body)
+
 local root = parse_xml(xml_body)
 local op_name, op_data = get_operation_data(root)
 local clean_op = op_name:gsub("wsdl:", ""):gsub("tns:", "") -- Cleanup if still has prefixes
@@ -101,6 +103,7 @@ if config.method == ngx.HTTP_GET then
         end
     end
     
+    ngx.log(ngx.INFO, "[SOAP-TO-REST] 2. Parsed & Converted to GET Request: Path=", path)
     res = ngx.location.capture(path, { method = ngx.HTTP_GET })
 
 elseif config.method == ngx.HTTP_POST then
@@ -112,14 +115,18 @@ elseif config.method == ngx.HTTP_POST then
         json_payload[clean_k] = v
     end
     
+    local json_str = cjson.encode(json_payload)
+    ngx.log(ngx.INFO, "[SOAP-TO-REST] 2. Parsed & Converted to JSON Request:\n", json_str)
+
     res = ngx.location.capture(config.path, {
         method = ngx.HTTP_POST,
-        body = cjson.encode(json_payload)
+        body = json_str
     })
 end
 
 -- 5. Response Handler (JSON -> XML)
 if res.status >= 200 and res.status < 300 then
+    ngx.log(ngx.INFO, "[SOAP-TO-REST] 3. Received JSON Response from Backend:\n", res.body)
     local json_res = cjson.decode(res.body)
     
     -- Construct XML Response
@@ -157,6 +164,8 @@ if res.status >= 200 and res.status < 300 then
 </soapenv:Envelope>
 ]]
 
+    
+    ngx.log(ngx.INFO, "[SOAP-TO-REST] 4. Converted to SOAP Response:\n", soap_response)
     ngx.header["Content-Type"] = "text/xml"
     ngx.say(soap_response)
 

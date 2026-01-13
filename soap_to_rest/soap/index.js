@@ -8,15 +8,15 @@ const port = 8000;
 
 // Mock Database
 let users = [
-    { id: '1', name: 'John Doe', email: 'john@example.com' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com' }
+    { id: '1', name: 'SOAP JA', email: 'SOAP@JA.com' },
+    { id: '2', name: 'SOAP JAJAJAJAJA', email: 'SOAP@JAJAJAJA.com' }
 ];
 
 // Service Implementation
 const service = {
     UserService: {
         UserPort: {
-            getUser: function(args) {
+            getUser: function (args) {
                 console.log('getUser called with:', args);
                 const user = users.find(u => u.id === args.id);
                 if (user) {
@@ -24,7 +24,7 @@ const service = {
                 }
                 return { name: 'Not Found', email: 'N/A' };
             },
-            createUser: function(args) {
+            createUser: function (args) {
                 console.log('createUser called with:', args);
                 const newId = (users.length + 1).toString();
                 const newUser = {
@@ -35,7 +35,7 @@ const service = {
                 users.push(newUser);
                 return { id: newId, status: 'Success' };
             },
-            listUsers: function(args) {
+            listUsers: function (args) {
                 console.log('listUsers called');
                 // soap module handles array of objects differently depending on version/config, 
                 // but usually for 'xsd:string' maxOccurs="unbounded", it expects an array of strings or simple types if mapped simplistically.
@@ -53,10 +53,10 @@ const service = {
 // Load WSDL
 const wsdlEnv = fs.readFileSync(path.join(__dirname, 'service.wsdl'), 'utf8');
 
-app.listen(port, function() {
+app.listen(port, function () {
     console.log(`Express server listening on port ${port}`);
     // Enable SOAP service
-    soap.listen(app, '/wsdl', service, wsdlEnv, function(){
-      console.log('SOAP server initialized at http://localhost:8000/wsdl?wsdl');
+    soap.listen(app, '/wsdl', service, wsdlEnv, function () {
+        console.log('SOAP server initialized at http://localhost:8000/wsdl?wsdl');
     });
 });
